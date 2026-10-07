@@ -1,11 +1,9 @@
-"use strict";
+import "should";
 
-require("should");
+import nock from "nock";
+import sinon from "sinon";
 
-const nock = require("nock");
-const sinon = require("sinon");
-
-const Consul = require("../lib");
+import Consul from "../lib/index.js";
 
 function setup(scope) {
   if (scope._setup) return;
@@ -40,5 +38,5 @@ function setup(scope) {
   });
 }
 
-exports.consul = (opts) => new Consul(opts);
-exports.setup = setup;
+export const consul = (opts) => new Consul(opts);
+export { setup };

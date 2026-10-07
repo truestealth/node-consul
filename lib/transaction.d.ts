@@ -1,4 +1,4 @@
-import { CommonOptions, Consul } from "./consul";
+import { CommonOptions, Consul } from "./consul.js";
 
 interface KVOption {
   verb: string;

@@ -1,15 +1,15 @@
-import { CommonOptions, Consul } from "./consul";
-import { CatalogConnect } from "./catalog/connect";
+import { CommonOptions, Consul } from "./consul.js";
+import { CatalogConnect } from "./catalog/connect.js";
 import {
   CatalogNode,
   ListOptions as NodeListOptions,
   ListResult as NodeListResult,
-} from "./catalog/node";
+} from "./catalog/node.js";
 import {
   CatalogService,
   ListOptions as ServiceListOptions,
   ListResult as ServiceListResult,
-} from "./catalog/service";
+} from "./catalog/service.js";
 
 interface DatacentersOptions extends CommonOptions {}
 

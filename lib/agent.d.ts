@@ -1,14 +1,14 @@
-import { CommonOptions, Consul } from "./consul";
+import { CommonOptions, Consul } from "./consul.js";
 import {
   AgentCheck,
   ListOptions as CheckListOptions,
   ListResult as CheckListResult,
-} from "./agent/check";
+} from "./agent/check.js";
 import {
   AgentService,
   ListOptions as ServiceListOptions,
   ListResult as ServiceListResult,
-} from "./agent/service";
+} from "./agent/service.js";
 
 interface MembersOptions extends CommonOptions {
   wan?: boolean;

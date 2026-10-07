@@ -1,10 +1,11 @@
 import { expectType, expectError } from "tsd";
-import { EventEmitter } from "events";
+import { EventEmitter } from "node:events";
 
-import Consul from "../lib";
+import Consul, { Consul as NamedConsul } from "../lib/index.js";
 
 const consul = new Consul();
 
+expectType<typeof Consul>(NamedConsul);
 expectType<Consul>(consul);
 
 consul.health.node({

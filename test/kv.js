@@ -1,9 +1,7 @@
-"use strict";
+import should from "should";
+import { EventEmitter } from "node:events";
 
-const should = require("should");
-const { EventEmitter } = require("events");
-
-const helper = require("./helper");
+import * as helper from "./helper.js";
 
 describe("Kv", function () {
   helper.setup(this);

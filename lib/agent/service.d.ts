@@ -1,5 +1,5 @@
-import { CommonOptions, Consul } from "../consul";
-import { CheckOptions } from "./check";
+import { CommonOptions, Consul } from "../consul.js";
+import { CheckOptions } from "./check.js";
 
 interface ListOptions extends CommonOptions {
   filter?: string;

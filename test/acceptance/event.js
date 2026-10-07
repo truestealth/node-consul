@@ -1,9 +1,7 @@
-"use strict";
+import should from "should";
+import { randomUUID } from "node:crypto";
 
-const should = require("should");
-const { randomUUID } = require("crypto");
-
-const helper = require("./helper");
+import * as helper from "./helper.js";
 
 helper.describe("Event", function () {
   before(async function () {

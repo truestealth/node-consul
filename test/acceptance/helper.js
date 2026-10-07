@@ -1,15 +1,15 @@
-"use strict";
+import "should";
 
-require("should");
+import async_ from "async";
+import fs from "node:fs";
+import path from "node:path";
+import { spawn } from "node:child_process";
+import temp from "temp";
+temp.track();
+import util from "node:util";
+import createDebug from "debug";
 
-const async_ = require("async");
-const fs = require("fs");
-const path = require("path");
-const spawn = require("child_process").spawn;
-const temp = require("temp").track();
-const util = require("util");
-
-const Consul = require("../../lib");
+import Consul from "../../lib/index.js";
 
 function bufferToString(value, depth) {
   if (!value) return value;
@@ -32,7 +32,7 @@ function bufferToString(value, depth) {
 }
 
 function debugBuffer(name) {
-  const debug = require("debug")(name);
+  const debug = createDebug(name);
 
   return function () {
     debug.apply(debug, bufferToString(Array.prototype.slice.call(arguments)));
@@ -179,6 +179,5 @@ async function after(test) {
 function skip() {}
 skip.skip = skip;
 
-exports.describe = process.env.ACCEPTANCE === "true" ? describe : skip;
-exports.before = before;
-exports.after = after;
+const acceptanceDescribe = process.env.ACCEPTANCE === "true" ? describe : skip;
+export { before, after, acceptanceDescribe as describe };

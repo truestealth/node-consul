@@ -1,15 +1,13 @@
-"use strict";
+import events from "node:events";
+import http from "node:http";
+import https from "node:https";
+import { URL } from "node:url";
 
-const events = require("events");
-const http = require("http");
-const https = require("https");
-const { URL } = require("url");
+import should from "should";
 
-const should = require("should");
+import * as utils from "../lib/utils.js";
 
-const utils = require("../lib/utils");
-
-const helper = require("./helper");
+import * as helper from "./helper.js";
 
 describe("utils", function () {
   helper.setup(this);

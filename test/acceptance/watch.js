@@ -1,9 +1,7 @@
-"use strict";
+import async_ from "async";
+import should from "should";
 
-const async_ = require("async");
-const should = require("should");
-
-const helper = require("./helper");
+import * as helper from "./helper.js";
 
 helper.describe("Watch", function () {
   before(async function () {

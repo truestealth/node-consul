@@ -1,3 +1,1 @@
-import { Consul } from "./consul";
-
-export = Consul;
+export { Consul as default, Consul } from "./consul.js";

@@ -1,12 +1,26 @@
 {
   "name": "@truestealth/consul",
-  "version": "0.1.0-beta.3",
+  "version": "1.0.0-beta.1",
   "description": "Consul HTTP API client with Promise support and TypeScript declarations",
-  "main": "./lib",
+  "type": "module",
+  "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=24"
+  },
   "files": [
     "./lib",
-    "NOTICE"
+    "NOTICE",
+    "README.ru.md",
+    "MIGRATION.md",
+    "MIGRATION.ru.md"
   ],
   "packageManager": "pnpm@10.34.6",
   "pnpm": {
@@ -19,13 +33,13 @@
     "papi": "^1.1.2"
   },
   "devDependencies": {
-    "@types/node": "^22.20.5",
+    "@types/node": "^24.19.1",
     "async": "^3.2.6",
+    "c8": "^12.0.0",
     "debug": "^4.4.3",
     "jshint": "^2.13.6",
     "mocha": "^12.0.3",
     "nock": "^14.0.17",
-    "nyc": "^18.0.0",
     "prettier": "^3.9.9",
     "should": "^13.2.3",
     "sinon": "^22.1.0",
@@ -33,11 +47,17 @@
     "tsd": "^0.33.0"
   },
   "scripts": {
-    "format": "prettier -w lib test test-d .github package.json README.md .jshintrc --end-of-line auto",
-    "test": "jshint lib test && prettier -c lib test test-d .github package.json README.md .jshintrc --end-of-line auto && nyc mocha --recursive --check-leaks && nyc check-coverage --statements 100 --functions 100 --branches 100 --lines 100",
+    "format": "prettier -w lib test test-d .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto",
+    "test": "jshint lib test && prettier -c lib test test-d .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto && c8 --all --include=lib/**/*.js --check-coverage --100 mocha --recursive --check-leaks",
     "types": "tsd",
-    "acceptance": "ACCEPTANCE=true nyc mocha test/acceptance --recursive --check-leaks --timeout 30000",
+    "acceptance": "ACCEPTANCE=true mocha test/acceptance --recursive --check-leaks --timeout 30000",
     "acceptanceSetupMacOS": "sudo ifconfig lo0 alias 127.0.0.2 up && sudo ifconfig lo0 alias 127.0.0.3 up"
+  },
+  "tsd": {
+    "compilerOptions": {
+      "module": "NodeNext",
+      "moduleResolution": "NodeNext"
+    }
   },
   "keywords": [
     "consul",

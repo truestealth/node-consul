@@ -1,5 +1,5 @@
-import { EventEmitter } from "events";
-import { CommonOptions, Consul } from "./consul";
+import { EventEmitter } from "node:events";
+import { CommonOptions, Consul } from "./consul.js";
 
 interface WatchOptions extends CommonOptions {
   method: Function;

@@ -1,8 +1,8 @@
-import { EventEmitter } from "events";
-import { IncomingMessage } from "http";
+import { EventEmitter } from "node:events";
+import { IncomingMessage } from "node:http";
 import { expectType, expectError } from "tsd";
-import Consul from "../lib";
-import { GetItem, GetOptions } from "../lib/kv";
+import Consul from "../lib/index.js";
+import { GetItem, GetOptions } from "../lib/kv.js";
 
 const consul = new Consul();
 

@@ -1,12 +1,10 @@
-"use strict";
+import async_ from "async";
+import should from "should";
+import { randomUUID } from "node:crypto";
 
-const async_ = require("async");
-const should = require("should");
-const { randomUUID } = require("crypto");
+import * as constants from "../../lib/constants.js";
 
-const constants = require("../../lib/constants");
-
-const helper = require("./helper");
+import * as helper from "./helper.js";
 
 helper.describe("Agent", function () {
   before(async function () {

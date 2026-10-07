@@ -1,5 +1,6 @@
 {
   "node": true,
+  "module": true,
   "esversion": 11,
   "globals": {
     // Mocha

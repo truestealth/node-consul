@@ -1,5 +1,5 @@
-import { AclLegacy } from "./acl/legacy";
-import { CommonOptions, Consul } from "./consul";
+import { AclLegacy } from "./acl/legacy.js";
+import { CommonOptions, Consul } from "./consul.js";
 
 interface BootstrapOptions extends CommonOptions {
   bootstrapsecret?: string;

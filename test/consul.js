@@ -1,23 +1,30 @@
-"use strict";
+import http from "node:http";
+import { execFileSync } from "node:child_process";
 
-const http = require("http");
-const { execFileSync } = require("child_process");
+import should from "should";
+import nock from "nock";
 
-const should = require("should");
-const nock = require("nock");
+import consul, { Consul } from "../lib/index.js";
 
-const consul = require("../lib");
-
-const helper = require("./helper");
+import * as helper from "./helper.js";
 
 describe("Consul", function () {
   helper.setup(this);
+
+  it("should expose the same default and named constructor", function () {
+    should(consul).equal(Consul);
+  });
 
   it("should allow a process to exit after import", function () {
     this.timeout(10000);
     execFileSync(
       process.execPath,
-      ["-e", "require(" + JSON.stringify(require.resolve("../lib")) + ")"],
+      [
+        "--input-type=module",
+        "-e",
+        "import " +
+          JSON.stringify(new URL("../lib/index.js", import.meta.url).href),
+      ],
       { timeout: 5000 },
     );
   });

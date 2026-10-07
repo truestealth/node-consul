@@ -1,6 +1,6 @@
-import { EventEmitter } from "events";
-import { IncomingMessage } from "http";
-import { CommonOptions, Consul } from "./consul";
+import { EventEmitter } from "node:events";
+import { IncomingMessage } from "node:http";
+import { CommonOptions, Consul } from "./consul.js";
 
 interface GetOptions extends CommonOptions {
   key?: string;

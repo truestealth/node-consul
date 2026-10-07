@@ -1,8 +1,6 @@
-"use strict";
+import should from "should";
 
-const should = require("should");
-
-const helper = require("./helper");
+import * as helper from "./helper.js";
 
 describe("Event", function () {
   helper.setup(this);

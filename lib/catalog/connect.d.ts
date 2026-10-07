@@ -1,5 +1,5 @@
-import { Consul } from "../consul";
-import { NodesOptions, NodesResult } from "./service";
+import { Consul } from "../consul.js";
+import { NodesOptions, NodesResult } from "./service.js";
 
 declare class CatalogConnect {
   constructor(consul: Consul);

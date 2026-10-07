@@ -1,17 +1,17 @@
-import { Agent as httpAgent } from "http";
-import { Agent as httpsAgent } from "https";
-import { EventEmitter } from "events";
-import { Acl } from "./acl";
-import { Agent } from "./agent";
-import { Catalog } from "./catalog";
-import { Event } from "./event";
-import { Health } from "./health";
-import { Kv } from "./kv";
-import { Query } from "./query";
-import { Session } from "./session";
-import { Status } from "./status";
-import { Transaction } from "./transaction";
-import { Watch, WatchOptions } from "./watch";
+import { Agent as httpAgent } from "node:http";
+import { Agent as httpsAgent } from "node:https";
+import { EventEmitter } from "node:events";
+import { Acl } from "./acl.js";
+import { Agent } from "./agent.js";
+import { Catalog } from "./catalog.js";
+import { Event } from "./event.js";
+import { Health } from "./health.js";
+import { Kv } from "./kv.js";
+import { Query } from "./query.js";
+import { Session } from "./session.js";
+import { Status } from "./status.js";
+import { Transaction } from "./transaction.js";
+import { Watch, WatchOptions } from "./watch.js";
 
 export interface CommonOptions {
   token?: string;

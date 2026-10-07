@@ -1,10 +1,8 @@
-"use strict";
+import should from "should";
 
-const should = require("should");
+import * as errors from "../lib/errors.js";
 
-const errors = require("../lib/errors");
-
-const helper = require("./helper");
+import * as helper from "./helper.js";
 
 describe("errors", function () {
   helper.setup(this);
