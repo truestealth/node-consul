@@ -75,9 +75,11 @@ export interface ConsulOptions extends Omit<
   | "agent"
   | "headers"
   | "host"
+  | "hostname"
   | "method"
   | "path"
   | "port"
+  | "protocol"
   | "signal"
   | "timeout"
 > {

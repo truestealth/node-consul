@@ -35,6 +35,11 @@ const consul = new Consul({
   },
 });
 expectType<Consul>(new Consul({ agent: false, timeout: 1000 }));
+expectType<Consul>(
+  new Consul({ host: "consul.example", port: 8501, secure: true }),
+);
+expectError(new Consul({ hostname: "consul.example" }));
+expectError(new Consul({ protocol: "https:" }));
 expectType<Consul>(consul.on("log", () => {}));
 expectType<QueryMeta>(Consul.parseQueryMeta());
 expectType<QueryMeta>(
