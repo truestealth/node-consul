@@ -6,16 +6,16 @@ A Promise-based client for the HashiCorp Consul HTTP API, with TypeScript
 declarations included. This is an independent community project, not an official
 HashiCorp client.
 
-## Requirements and release status
+## Requirements
 
 - Node.js **24 or newer**. CI covers Node.js 24 and 26; see the
   [Node.js release schedule](https://nodejs.org/en/about/previous-releases).
 - Native **ES modules only**. There is no separate CommonJS build.
 - No runtime dependencies: requests use Node.js `http` and `https`.
 - TypeScript **5 or newer** when using the included declarations.
-- `1.0.0-beta.3` adds Config Entries and typed L4/L7 service intentions to the
-  native HTTP client. This remains a preview pending acceptance and final release
-  checks, not stable 1.0.0.
+
+Version **1.0.0** combines the native HTTP client with Config Entries and typed
+L4/L7 service intentions.
 
 Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
 [migration guide](MIGRATION.md).
@@ -23,7 +23,7 @@ Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
 ## Get started
 
 ```sh
-npm install @truestealth/consul@1.0.0-beta.3
+npm install @truestealth/consul@1.0.0
 ```
 
 Use an `.mjs` file or set `"type": "module"` in your application's `package.json`:
@@ -65,6 +65,10 @@ The constructor also accepts `baseUrl`, `headers`, `socketPath`, and Node.js TLS
 options such as `ca`, `cert`, `key`, and `servername`. Keep certificate verification
 enabled; provide your private CA instead of disabling HTTPS verification. A
 custom agent remains yours to configure and destroy.
+
+Choose the address with `host`, `port`, and `secure`, or supply an HTTP(S)
+`baseUrl`. Node.js request options named `hostname` and `protocol` are not
+supported client-address settings.
 
 ```js
 import { readFile } from "node:fs/promises";
@@ -191,8 +195,9 @@ a safe integer, decimal string, or bigint in the uint64 range. For larger
 indices, supply an exact string or bigint rather than an already-rounded number.
 
 The client forwards `ns` and `partition`, including on writes and deletes.
-These options require the relevant Consul Enterprise features and ACLs; local
-Community tests do not establish Enterprise compatibility. See the
+These options require the relevant Consul Enterprise features and ACLs. Mocks
+verify that the parameters are sent, not how an Enterprise server handles them;
+Enterprise acceptance has not been run. See the
 [Config API](https://developer.hashicorp.com/consul/api-docs/config) for supported
 kinds and server-side rules.
 
@@ -331,6 +336,12 @@ The advisory lists no patched version. This dependency is not part of the
 runtime npm package, and Consul API inputs are not evaluated as glob patterns.
 Do not pass untrusted patterns to the development tools; the finding remains
 open rather than being hidden by an incompatible override.
+
+Release verification on 2026-10-07: **300 runtime tests** pass on Node.js 24 and 26. The Node.js 24 coverage check reports 100% statements, branches, functions,
+and lines. Type checks and
+fresh archive-install/import checks pass. **64 acceptance tests** pass against
+HashiCorp Consul **2.0.4 Community**. This does not establish compatibility with
+every server version or edition; inherited endpoints require server support.
 
 ## Origin and license
 

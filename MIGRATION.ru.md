@@ -2,10 +2,9 @@
 
 [English](MIGRATION.md) · [Документация клиента](README.ru.md)
 
-Инструкция для проектов с `consul@2.x` и `@truestealth/consul@0.1.x`. В
-`1.0.0-beta.3` уже включает ESM, HTTP-слой на стандартной библиотеке Node.js и
-Config Entries с service-intentions. Acceptance и финальные проверки еще должны
-завершиться до стабильного 1.0.0.
+Инструкция для проектов с `consul@2.x` и `@truestealth/consul@0.1.x`. В версию
+1.0.0 входят ESM, HTTP-слой на стандартной библиотеке Node.js и Config Entries
+с service-intentions.
 
 ## Сначала среда и имя пакета
 
@@ -14,7 +13,7 @@ Config Entries с service-intentions. Acceptance и финальные пров�
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.0.0-beta.3
+npm install @truestealth/consul@1.0.0
 ```
 
 Если scoped-пакет уже используется, удалять `consul` не требуется. Проверьте
@@ -94,6 +93,8 @@ Papi больше не используется. Runtime-зависимосте�
 стандартными `http` и `https` Node.js. HTTPS, свой CA, клиентский сертификат,
 keep-alive, пользовательский agent и `socketPath` остаются доступны. Настройки
 TLS передаются в конструктор, `agent: false` отключает пул соединений.
+Для адреса используйте `host`, `port`, `secure` или HTTP(S) `baseUrl`,
+а не параметры Node.js `hostname` и `protocol`.
 
 Расширения Papi через plugins, middleware и codecs больше не поддерживаются.
 Если приложение использовало внутренние объекты Papi, такую интеграцию нужно
@@ -138,12 +139,13 @@ boolean от сервера. При успешном безусловном уд
 Примеры находятся в [README](README.ru.md), серверные условия — в
 [справочнике HashiCorp](https://developer.hashicorp.com/consul/docs/reference/config-entry/service-intentions).
 
-## Границы этой beta
+## Что проверено и где остаются ограничения
 
 Клиент не обещает охват всех endpoint каждой версии Consul; декларации не
-заменяют проверку конфигурации самим сервером. Enterprise-сценарии проверяйте
-на своей Enterprise-инсталляции. Redis, DNS discovery и система scoring не
-добавляются.
+заменяют проверку конфигурации самим сервером. Acceptance пройден на Consul
+2.0.4 Community. Для namespace и partition mocks подтверждают лишь передачу
+параметров; поведение Enterprise проверяйте на своей инсталляции. Redis,
+DNS discovery и система scoring не добавляются.
 
 Перед переходом прогоните свои сценарии на настоящем Consul: ACL, HTTPS,
 бинарные значения, отказ CAS, blocking queries и завершение watch. Для

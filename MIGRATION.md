@@ -3,9 +3,8 @@
 [Русский](MIGRATION.ru.md) · [Package documentation](README.md)
 
 This guide applies to `consul@2.x` and `@truestealth/consul@0.1.x` applications.
-The `1.0.0-beta.3` preview includes ESM, the native Node.js HTTP transport, and
-Config Entries with service-intentions support. Final acceptance and release
-checks still precede stable 1.0.0.
+Version 1.0.0 includes ESM, the native Node.js HTTP transport, and Config Entries
+with service-intentions support.
 
 ## 1. Update Node.js and the dependency
 
@@ -14,7 +13,7 @@ runs CI on Node.js 26.
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.0.0-beta.3
+npm install @truestealth/consul@1.0.0
 ```
 
 Skip the uninstall command if you already use the scoped package. Update any
@@ -89,6 +88,8 @@ Papi has been removed. The client has no runtime dependencies and uses Node.js
 `http` and `https` directly. Standard HTTPS options, private CA certificates,
 client certificates, keep-alive, a custom agent, and `socketPath` remain available.
 Pass TLS settings in the constructor; `agent: false` disables connection pooling.
+Use `host`, `port`, and `secure` or an HTTP(S) `baseUrl` for the address, not
+Node.js `hostname` or `protocol` options.
 
 Papi plugin, middleware, and codec extension hooks are not supported. Applications
 that extend or access Papi internals need to remove that integration; those hooks
@@ -134,13 +135,15 @@ whole entry: preserve existing sources when editing and use CAS. L4 sources use
 compatible service protocol. See the [examples](README.md#config-entries) and
 [HashiCorp reference](https://developer.hashicorp.com/consul/docs/reference/config-entry/service-intentions).
 
-## Preview limits
+## Verified scope and limits
 
 The inherited API does not cover every endpoint of every Consul version, and
 declarations are not a substitute for the server's configuration validation.
-Enterprise-specific behavior requires testing against your Enterprise deployment.
+Acceptance tests pass against Consul 2.0.4 Community. Mocks check transmission of
+Enterprise namespace and partition parameters only; Enterprise behavior requires
+testing against your own deployment.
 No Redis-backed resolver, DNS discovery, or scoring subsystem is added.
 
-Run application tests against your real Consul configuration before adopting the
-preview. Test ACLs, TLS, binary KV values, CAS failures, blocking reads, watch
+Run application tests against your real Consul configuration before upgrading.
+Test ACLs, TLS, binary KV values, CAS failures, blocking reads, watch
 shutdown, and any Enterprise parameters you use.
