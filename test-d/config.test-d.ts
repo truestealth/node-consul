@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { IncomingMessage } from "node:http";
-import { expectType, expectError } from "tsd";
+import { expectTypeOf } from "expect-type";
 import Consul from "../lib/index.js";
 import type {
   ConfigEntry,
@@ -14,7 +14,7 @@ import type {
 const consul = new Consul();
 const signal = new AbortController().signal;
 
-expectType<Promise<ServiceDefaultsEntry | undefined>>(
+expectTypeOf(
   consul.config.get({
     kind: "service-defaults",
     name: "web",
@@ -26,16 +26,16 @@ expectType<Promise<ServiceDefaultsEntry | undefined>>(
     timeout: "2m",
     signal,
   }),
-);
-expectType<Promise<ServiceIntentionsEntry | undefined>>(
+).toEqualTypeOf<Promise<ServiceDefaultsEntry | undefined>>();
+expectTypeOf(
   consul.config.get({ kind: "service-intentions", name: "web" }),
-);
-expectType<Promise<ServiceIntentionsEntry[]>>(
-  consul.config.list("service-intentions"),
-);
-expectType<Promise<ServiceDefaultsEntry[]>>(
+).toEqualTypeOf<Promise<ServiceIntentionsEntry | undefined>>();
+expectTypeOf(consul.config.list("service-intentions")).toEqualTypeOf<
+  Promise<ServiceIntentionsEntry[]>
+>();
+expectTypeOf(
   consul.config.list({ kind: "service-defaults", filter: 'Name == "web"' }),
-);
+).toEqualTypeOf<Promise<ServiceDefaultsEntry[]>>();
 
 const intentions: ServiceIntentionsEntry = {
   Kind: "service-intentions",
@@ -58,8 +58,10 @@ const intentions: ServiceIntentionsEntry = {
     },
   ],
 };
-expectType<Promise<boolean>>(consul.config.set({ entry: intentions, cas: 0 }));
-expectType<Promise<boolean>>(
+expectTypeOf(consul.config.set({ entry: intentions, cas: 0 })).toEqualTypeOf<
+  Promise<boolean>
+>();
+expectTypeOf(
   consul.config.set({
     entry: {
       Kind: "service-intentions",
@@ -72,77 +74,66 @@ expectType<Promise<boolean>>(
       ],
     },
   }),
-);
-expectType<Promise<boolean>>(
+).toEqualTypeOf<Promise<boolean>>();
+expectTypeOf(
   consul.config.set({
     entry: { Kind: "service-defaults", Name: "web", Protocol: "http" },
     cas: "18446744073709551615",
   }),
-);
-expectType<Promise<boolean>>(
+).toEqualTypeOf<Promise<boolean>>();
+expectTypeOf(
   consul.config.del({
     kind: "service-defaults",
     name: "web",
     cas: 42n,
     signal,
   }),
-);
-expectType<Promise<boolean>>(
+).toEqualTypeOf<Promise<boolean>>();
+expectTypeOf(
   consul.config.delete({ kind: "service-defaults", name: "web", cas: 0 }),
-);
+).toEqualTypeOf<Promise<boolean>>();
 
 const ctx = Object.assign(new EventEmitter(), {
   includeResponse: true as const,
 });
-expectType<Promise<[IncomingMessage, ServiceIntentionsEntry?]>>(
+expectTypeOf(
   consul.config.get({ kind: "service-intentions", name: "web", ctx }),
-);
-expectType<Promise<[IncomingMessage, ServiceIntentionsEntry[]]>>(
+).toEqualTypeOf<Promise<[IncomingMessage, ServiceIntentionsEntry?]>>();
+expectTypeOf(
   consul.config.list({ kind: "service-intentions", ctx }),
-);
-expectType<Promise<[IncomingMessage, boolean]>>(
+).toEqualTypeOf<Promise<[IncomingMessage, ServiceIntentionsEntry[]]>>();
+expectTypeOf(
   consul.config.set({ entry: intentions, cas: 0, ctx }),
-);
-expectType<Promise<[IncomingMessage, boolean]>>(
+).toEqualTypeOf<Promise<[IncomingMessage, boolean]>>();
+expectTypeOf(
   consul.config.del({ kind: "service-intentions", name: "web", ctx }),
-);
+).toEqualTypeOf<Promise<[IncomingMessage, boolean]>>();
 const options: GetOptions = { kind: "service-defaults", name: "web" };
-expectType<Promise<ConfigEntry | undefined | [IncomingMessage, ConfigEntry?]>>(
-  consul.config.get(options),
-);
+expectTypeOf(consul.config.get(options)).toEqualTypeOf<
+  Promise<ConfigEntry | undefined | [IncomingMessage, ConfigEntry?]>
+>();
 
-expectError(consul.config.get({ kind: "service-defaults" }));
-expectError(consul.config.list({ name: "web" }));
-expectError(consul.config.set({ entry: { Name: "web" } }));
-expectError(consul.config.set({ entry: intentions, cas: true }));
-expectError(
-  consul.config.set({
-    entry: {
-      Kind: "service-intentions",
-      Name: "web",
-      Sources: [
-        {
-          Name: "frontend",
-          Action: "allow",
-          Permissions: [{ Action: "allow", HTTP: {} }],
-        },
-      ],
-    },
-  }),
-);
-expectError(
-  consul.config.del({ kind: "service-defaults", name: "web", signal: 1 }),
-);
-expectError<IntentionSource>({
-  Name: "frontend",
-  Action: "allow",
-  Permissions: [{ Action: "allow", HTTP: {} }],
-});
-expectError<IntentionSource>({ Name: "frontend", Action: "invalid" });
-expectError<IntentionSource>({
-  Name: "frontend",
-  Permissions: [{ Action: "allow" }],
-});
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.get({ kind: "service-defaults" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.list({ name: "web" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.set({ entry: { Name: "web" } });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.set({ entry: intentions, cas: true });
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.set({ entry: { Kind: "service-intentions", Name: "web", Sources: [ { Name: "frontend", Action: "allow", Permissions: [{ Action: "allow", HTTP: {} }], }, ], }, });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.del({ kind: "service-defaults", name: "web", signal: 1 });
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+const rejected8: IntentionSource = { Name: "frontend", Action: "allow", Permissions: [{ Action: "allow", HTTP: {} }], };
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+const rejected7: IntentionSource = { Name: "frontend", Action: "invalid" };
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+const rejected6: IntentionSource = { Name: "frontend", Permissions: [{ Action: "allow" }], };
 
 const defaults: ServiceDefaultsEntry = {
   Kind: "service-defaults",
@@ -160,22 +151,26 @@ const defaults: ServiceDefaultsEntry = {
   },
   AdditionalServerSetting: { enabled: true },
 };
-expectType<Promise<boolean>>(consul.config.set({ entry: defaults, cas: 0 }));
+expectTypeOf(consul.config.set({ entry: defaults, cas: 0 })).toEqualTypeOf<
+  Promise<boolean>
+>();
 const serviceDefaults = await consul.config.get({
   kind: "service-defaults",
   name: "web",
 });
-expectType<"" | "tcp" | "http" | "http2" | "grpc" | undefined>(
-  serviceDefaults?.Protocol,
-);
-expectType<number | undefined>(
+expectTypeOf(serviceDefaults?.Protocol).toEqualTypeOf<
+  "" | "tcp" | "http" | "http2" | "grpc" | undefined
+>();
+expectTypeOf(
   serviceDefaults?.UpstreamConfig?.Defaults?.ConnectTimeoutMs,
-);
-expectType<Promise<ProxyDefaultsEntry | undefined>>(
+).toEqualTypeOf<number | undefined>();
+expectTypeOf(
   consul.config.get({ kind: "proxy-defaults", name: "global" }),
-);
-expectType<Promise<ProxyDefaultsEntry[]>>(consul.config.list("proxy-defaults"));
-expectType<Promise<boolean>>(
+).toEqualTypeOf<Promise<ProxyDefaultsEntry | undefined>>();
+expectTypeOf(consul.config.list("proxy-defaults")).toEqualTypeOf<
+  Promise<ProxyDefaultsEntry[]>
+>();
+expectTypeOf(
   consul.config.set({
     entry: {
       Kind: "proxy-defaults",
@@ -186,50 +181,37 @@ expectType<Promise<boolean>>(
       },
     },
   }),
-);
-expectType<Promise<[IncomingMessage, ServiceDefaultsEntry?]>>(
+).toEqualTypeOf<Promise<boolean>>();
+expectTypeOf(
   consul.config.get({ kind: "service-defaults", name: "web", ctx }),
-);
-expectType<Promise<ConfigEntry<"future-kind"> | undefined>>(
+).toEqualTypeOf<Promise<[IncomingMessage, ServiceDefaultsEntry?]>>();
+expectTypeOf(
   consul.config.get({ kind: "future-kind", name: "web" }),
-);
-expectType<Promise<boolean>>(
+).toEqualTypeOf<Promise<ConfigEntry<"future-kind"> | undefined>>();
+expectTypeOf(
   consul.config.set({
     entry: { Kind: "future-kind", Name: "web", ArbitrarySetting: [1, 2] },
   }),
-);
+).toEqualTypeOf<Promise<boolean>>();
 const rawEntry: ConfigEntry = {
   Kind: "service-defaults",
   Name: "web",
   NewServerField: true,
 };
-expectType<Promise<boolean>>(consul.config.set({ entry: rawEntry }));
-expectError(
-  consul.config.set({
-    entry: { Kind: "service-defaults", Name: "web", Protocol: "https" },
-  }),
-);
-expectError(
-  consul.config.set({
-    entry: { Kind: "service-defaults", Name: "web", Protocol: 123 },
-  }),
-);
-expectError(
-  consul.config.set({
-    entry: { Kind: "proxy-defaults", Name: "not-global" },
-  }),
-);
-expectError(
-  consul.config.set({
-    entry: {
-      Kind: "proxy-defaults",
-      Name: "global",
-      MeshGateway: { Mode: "invalid" },
-    },
-  }),
-);
-expectError<ServiceDefaultsEntry>({
-  Kind: "service-defaults",
-  Name: "web",
-  UpstreamConfig: { Overrides: [{ Protocol: "http" }] },
-});
+expectTypeOf(consul.config.set({ entry: rawEntry })).toEqualTypeOf<
+  Promise<boolean>
+>();
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.set({ entry: { Kind: "service-defaults", Name: "web", Protocol: "https" }, });
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.set({ entry: { Kind: "service-defaults", Name: "web", Protocol: 123 }, });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.set({ entry: { Kind: "proxy-defaults", Name: "not-global" } });
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.config.set({ entry: { Kind: "proxy-defaults", Name: "global", MeshGateway: { Mode: "invalid" }, }, });
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+const rejected1: ServiceDefaultsEntry = { Kind: "service-defaults", Name: "web", UpstreamConfig: { Overrides: [{ Protocol: "http" }] }, };

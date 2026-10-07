@@ -13,7 +13,7 @@ runs CI on Node.js 26.
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.2.0
+npm install @truestealth/consul@1.2.1
 ```
 
 Skip the uninstall command if you already use the scoped package. Update any

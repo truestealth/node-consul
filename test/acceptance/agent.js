@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 
 import * as constants from "../../lib/constants.js";
@@ -17,29 +17,31 @@ helper.describe("Agent", function () {
   describe("members", function () {
     it("should return members agent sees in cluster gossip pool", async function () {
       const data = await this.c1.agent.members();
-      should(data).be.instanceOf(Array);
+      assert.ok(data instanceof Array);
 
-      should(data.length).eql(1);
-      should(
-        data.map((m) => {
-          return m.Name;
-        }),
-      ).containEql("node1");
+      assert.deepEqual(data.length, 1);
+      assert.ok(
+        data
+          .map((m) => {
+            return m.Name;
+          })
+          .includes("node1"),
+      );
     });
   });
 
   describe("self", function () {
     it("should return information about agent", async function () {
       const data = await this.c1.agent.self();
-      should(data).be.instanceOf(Object);
-      should(data).have.properties("Config", "Member");
+      assert.ok(data instanceof Object);
+      assert.ok(["Config", "Member"].every((key) => key in data));
 
-      should(data.Config.Server).be.true();
-      should(data.Config.Datacenter).eql("dc1");
-      should(data.Config.NodeName).eql("node1");
+      assert.equal(data.Config.Server, true);
+      assert.deepEqual(data.Config.Datacenter, "dc1");
+      assert.deepEqual(data.Config.NodeName, "node1");
 
-      should(data.Member.Name).eql("node1");
-      should(data.Member.Addr).eql("127.0.0.1");
+      assert.deepEqual(data.Member.Name, "node1");
+      assert.deepEqual(data.Member.Addr, "127.0.0.1");
     });
 
     it("should work with opts", async function () {
@@ -50,30 +52,27 @@ helper.describe("Agent", function () {
   describe("maintenance", function () {
     it("should set node maintenance mode", async function () {
       const statusChecks = await this.c1.agent.checks();
-      should(statusChecks).not.have.property("_node_maintenance");
+      assert.ok(!("_node_maintenance" in statusChecks));
 
       await this.c1.agent.maintenance(true);
 
       const enableStatus = await this.c1.agent.checks();
-      should(enableStatus).have.property("_node_maintenance");
-      should(enableStatus._node_maintenance).have.property(
-        "Status",
-        "critical",
-      );
+      assert.ok("_node_maintenance" in enableStatus);
+      assert.deepEqual(enableStatus._node_maintenance.Status, "critical");
 
       await this.c1.agent.maintenance({ enable: false });
 
       const disableStatus = await this.c1.agent.checks();
-      should(disableStatus).not.have.property("_node_maintenance");
+      assert.ok(!("_node_maintenance" in disableStatus));
     });
 
     it("should require valid enable", async function () {
       try {
         await this.c1.agent.maintenance({ enable: "false" });
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
+        assert.deepEqual(
+          err.message,
           "consul: agent.maintenance: enable required",
         );
       }
@@ -90,8 +89,8 @@ helper.describe("Agent", function () {
         return m.Addr;
       });
 
-      should(memberAddrs).containEql(joinAddr);
-      should(memberAddrs).not.containEql(joinerAddr);
+      assert.ok(memberAddrs.includes(joinAddr));
+      assert.ok(!memberAddrs.includes(joinerAddr));
 
       await this.c2.agent.join({ address: joinAddr, token: "agent_master" });
     });
@@ -99,12 +98,9 @@ helper.describe("Agent", function () {
     it("should require address", async function () {
       try {
         await this.c1.agent.join({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: agent.join: address required",
-        );
+        assert.deepEqual(err.message, "consul: agent.join: address required");
       }
     });
   });
@@ -114,8 +110,8 @@ helper.describe("Agent", function () {
       const ensureJoined = await this.c1.agent.members();
 
       const node2 = ensureJoined.find((m) => m.Name === "node2");
-      should.exist(node2);
-      should(node2.Status).eql(constants.AGENT_STATUS.indexOf("alive"));
+      assert.ok(node2 != null);
+      assert.deepEqual(node2.Status, constants.AGENT_STATUS.indexOf("alive"));
 
       await this.c1.agent.forceLeave("node2");
 
@@ -131,10 +127,10 @@ helper.describe("Agent", function () {
     it("should require node", async function () {
       try {
         await this.c1.agent.forceLeave({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
+        assert.deepEqual(
+          err.message,
           "consul: agent.forceLeave: node required",
         );
       }
@@ -147,17 +143,15 @@ helper.describe("Agent", function () {
       this.exists = async (id, exists) => {
         const checks = await this.c1.agent.checks();
 
-        let s = should(checks);
-        if (!exists) s = s.not;
-        s.have.property(id);
+        assert.equal(id in checks, Boolean(exists));
       };
 
       this.state = async (id, state) => {
         const checks = await this.c1.agent.checks();
-        should(checks).have.property(id);
+        assert.ok(id in checks);
 
         const check = checks[id];
-        should(check.Status).eql(state);
+        assert.deepEqual(check.Status, state);
       };
     });
 
@@ -183,8 +177,8 @@ helper.describe("Agent", function () {
     describe("list", function () {
       it("should return agent checks", async function () {
         const data = await this.c1.agent.checks(this.name);
-        should.exist(data);
-        should(data).have.property(this.name);
+        assert.ok(data != null);
+        assert.ok(this.name in data);
       });
     });
 
@@ -238,9 +232,7 @@ helper.describe("Agent", function () {
       this.exists = async (id, exists) => {
         const services = await this.c1.agent.services();
 
-        let s = should(services);
-        if (!exists) s = s.not;
-        s.have.property(id);
+        assert.equal(id in services, Boolean(exists));
       };
     });
 
@@ -270,8 +262,8 @@ helper.describe("Agent", function () {
     describe("list", function () {
       it("should return agent services", async function () {
         const data = await this.c1.agent.services();
-        should.exist(data);
-        should(data).have.property(this.name);
+        assert.ok(data != null);
+        assert.ok(this.name in data);
       });
     });
 
@@ -300,8 +292,8 @@ helper.describe("Agent", function () {
         });
 
         const checks = await this.c1.agent.check.list();
-        should(checks).not.be.empty();
-        should(checks["service:" + name]).have.property("Notes", notes);
+        assert.ok(Object.keys(checks).length > 0);
+        assert.deepEqual(checks["service:" + name].Notes, notes);
       });
 
       it("should create service with script check", async function () {
@@ -321,8 +313,8 @@ helper.describe("Agent", function () {
         });
 
         const checks = await this.c1.agent.check.list();
-        should(checks).not.be.empty();
-        should(checks["service:" + name]).have.property("Notes", notes);
+        assert.ok(Object.keys(checks).length > 0);
+        assert.deepEqual(checks["service:" + name].Notes, notes);
       });
     });
 
@@ -339,7 +331,7 @@ helper.describe("Agent", function () {
         const checkId = "_service_maintenance:" + this.name;
 
         const checks = await this.c1.agent.checks();
-        should(checks).not.have.property(checkId);
+        assert.ok(!(checkId in checks));
 
         await this.c1.agent.service.maintenance({
           id: this.name,
@@ -347,8 +339,8 @@ helper.describe("Agent", function () {
         });
 
         const enableStatus = await this.c1.agent.checks();
-        should(enableStatus).have.property(checkId);
-        should(enableStatus[checkId]).have.property("Status", "critical");
+        assert.ok(checkId in enableStatus);
+        assert.deepEqual(enableStatus[checkId].Status, "critical");
 
         await this.c1.agent.service.maintenance({
           id: this.name,
@@ -356,7 +348,7 @@ helper.describe("Agent", function () {
         });
 
         const disableStatus = this.c1.agent.checks();
-        should(disableStatus).not.have.property(checkId);
+        assert.ok(!(checkId in disableStatus));
       });
     });
   });

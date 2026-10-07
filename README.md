@@ -14,9 +14,9 @@ HashiCorp client.
 - No runtime dependencies: requests use Node.js `http` and `https`.
 - TypeScript **5.4 or newer** when using the included declarations.
 
-Version **1.2.0** adds opt-in watch pacing and safe request diagnostics to the
-modern ACL API and typed Config Entry/transaction contracts. Existing connection
-options and default watch timing remain unchanged.
+Version **1.2.1** refreshes the development tools and type checks. It retains
+the modern ACL API, typed Config Entry/transaction contracts, opt-in watch pacing
+and safe request diagnostics introduced in earlier releases.
 
 Moving from `consul@2.x`? Start with the
 [migration guide](MIGRATION.md).
@@ -24,7 +24,7 @@ Moving from `consul@2.x`? Start with the
 ## Get started
 
 ```sh
-npm install @truestealth/consul@1.2.0
+npm install @truestealth/consul@1.2.1
 ```
 
 Use an `.mjs` file or set `"type": "module"` in your application's `package.json`:
@@ -425,6 +425,7 @@ Use the pnpm version pinned in `package.json`:
 ```sh
 pnpm install --frozen-lockfile
 npm test
+npm run lint
 npm run types
 npm run package:check
 git diff --check
@@ -435,6 +436,11 @@ npm pack --dry-run
 including TLS and cancellation cases. `npm run package:check` installs the actual
 npm archive offline and checks its imports, HTTP requests and NodeNext types.
 
+ESLint checks JavaScript, Prettier checks formatting, and assertions use
+`node:assert/strict`. Type tests use the TypeScript CLI and `expect-type` to check
+inferred results and reject invalid calls; archive consumers use the compiler
+CLI as well.
+
 Acceptance starts three Consul agents on `127.0.0.1`–`127.0.0.3` and isolated
 single-agent ACL/TLS scenarios.
 Set `CONSUL_BIN` to a local executable if `consul` is not on `PATH`, prepare those
@@ -442,14 +448,6 @@ loopback addresses, then run `npm run acceptance`. The test cluster enables
 Connect and uses the BoltDB Raft backend for Windows compatibility; these are
 test settings, not requirements for your deployment. The client has no build
 step; the npm archive ships source modules and declarations.
-
-Known development-only audit finding (2026-10-07): the `tsd`/`globby` dependency
-chain includes `braces@3.0.3`, affected by the high-severity
-[GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
-The advisory lists no patched version. This dependency is not part of the
-runtime npm package, and Consul API inputs are not evaluated as glob patterns.
-Do not pass untrusted patterns to the development tools; the finding remains
-open rather than being hidden by an incompatible override.
 
 CI checks runtime tests, 100% coverage, declarations and actual archive consumers
 on Node.js 24 and 26, on Linux and Windows. Acceptance uses Consul **1.22.7** and

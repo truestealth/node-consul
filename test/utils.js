@@ -2,7 +2,7 @@ import http from "node:http";
 import https from "node:https";
 import { URL } from "node:url";
 
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as utils from "../lib/utils.js";
 
@@ -13,21 +13,20 @@ describe("utils", function () {
 
   describe("getAgent", function () {
     it("should work", function () {
-      should(utils.getAgent()).be.undefined();
-      should(utils.getAgent({})).be.undefined();
+      assert.equal(utils.getAgent(), undefined);
+      assert.equal(utils.getAgent({}), undefined);
 
-      should(utils.getAgent("http://www.example.com")).be.instanceOf(
-        http.Agent,
-      );
-      should(utils.getAgent(new URL("http://www.example.com"))).be.instanceOf(
-        http.Agent,
+      assert.ok(utils.getAgent("http://www.example.com") instanceof http.Agent);
+      assert.ok(
+        utils.getAgent(new URL("http://www.example.com")) instanceof http.Agent,
       );
 
-      should(utils.getAgent("https://www.example.com")).be.instanceOf(
-        https.Agent,
+      assert.ok(
+        utils.getAgent("https://www.example.com") instanceof https.Agent,
       );
-      should(utils.getAgent(new URL("https://www.example.com"))).be.instanceOf(
-        https.Agent,
+      assert.ok(
+        utils.getAgent(new URL("https://www.example.com")) instanceof
+          https.Agent,
       );
     });
   });
@@ -35,11 +34,11 @@ describe("utils", function () {
   describe("body", function () {
     it("should work", function () {
       utils.body({ err: null, res: { body: "body" } }, (...args) => {
-        should(args).eql([false, "body"]);
+        assert.deepEqual(args, [false, "body"]);
       });
 
       utils.body({ err: "err", res: { body: "body" } }, (...args) => {
-        should(args).eql([false, "err"]);
+        assert.deepEqual(args, [false, "err"]);
       });
     });
   });
@@ -47,15 +46,15 @@ describe("utils", function () {
   describe("bodyItem", function () {
     it("should work", function () {
       utils.bodyItem({ err: null, res: { body: ["body"] } }, (...args) => {
-        should(args).eql([false, "body"]);
+        assert.deepEqual(args, [false, "body"]);
       });
 
       utils.bodyItem({ err: null, res: { body: [] } }, (...args) => {
-        should(args).eql([false, undefined]);
+        assert.deepEqual(args, [false, undefined]);
       });
 
       utils.bodyItem({ err: "err", res: { body: ["body"] } }, (...args) => {
-        should(args).eql([false, "err"]);
+        assert.deepEqual(args, [false, "err"]);
       });
     });
   });
@@ -63,18 +62,18 @@ describe("utils", function () {
   describe("empty", function () {
     it("should work", function () {
       utils.empty({ err: null, res: "res" }, (...args) => {
-        should(args).eql([false, undefined]);
+        assert.deepEqual(args, [false, undefined]);
       });
 
       utils.empty({ err: "err", res: "res" }, (...args) => {
-        should(args).eql([false, "err"]);
+        assert.deepEqual(args, [false, "err"]);
       });
     });
   });
 
   describe("normalizeKeys", function () {
     it("should work", function () {
-      should(utils.normalizeKeys()).eql({});
+      assert.deepEqual(utils.normalizeKeys(), {});
 
       const Obj = function () {
         this.onetwo = "onetwo";
@@ -85,7 +84,7 @@ describe("utils", function () {
 
       const obj = new Obj();
 
-      should(utils.normalizeKeys(obj)).eql({
+      assert.deepEqual(utils.normalizeKeys(obj), {
         onetwo: "onetwo",
         twoone: "twoone",
         value: "value",
@@ -95,28 +94,36 @@ describe("utils", function () {
 
   describe("defaults", function () {
     it("should work", function () {
-      should(utils.defaults()).eql({});
-      should(utils.defaults({})).eql({});
-      should(utils.defaults({}, {})).eql({});
-      should(utils.defaults({}, { hello: "world" })).eql({ hello: "world" });
-      should(utils.defaults({ hello: "world" }, {})).eql({ hello: "world" });
-      should(utils.defaults({ hello: "world" }, { hello: "test" })).eql({
+      assert.deepEqual(utils.defaults(), {});
+      assert.deepEqual(utils.defaults({}), {});
+      assert.deepEqual(utils.defaults({}, {}), {});
+      assert.deepEqual(utils.defaults({}, { hello: "world" }), {
         hello: "world",
       });
-      should(utils.defaults({ hello: null }, { hello: "test" })).eql({
+      assert.deepEqual(utils.defaults({ hello: "world" }, {}), {
+        hello: "world",
+      });
+      assert.deepEqual(utils.defaults({ hello: "world" }, { hello: "test" }), {
+        hello: "world",
+      });
+      assert.deepEqual(utils.defaults({ hello: null }, { hello: "test" }), {
         hello: null,
       });
-      should(utils.defaults({ hello: undefined }, { hello: "test" })).eql({
-        hello: undefined,
-      });
-      should(
+      assert.deepEqual(
+        utils.defaults({ hello: undefined }, { hello: "test" }),
+        {
+          hello: undefined,
+        },
+      );
+      assert.deepEqual(
         utils.defaults(
           { one: 1 },
           { two: 2, one: "nope" },
           { three: 3, two: "nope" },
           { three: "nope" },
         ),
-      ).eql({ one: 1, two: 2, three: 3 });
+        { one: 1, two: 2, three: 3 },
+      );
     });
   });
 
@@ -128,10 +135,13 @@ describe("utils", function () {
     };
 
     it("should work", function () {
-      should(test()).eql({ headers: {}, query: {} });
-      should(test({})).eql({ headers: {}, query: {} });
-      should(test({ stale: true })).eql({ headers: {}, query: { stale: "1" } });
-      should(
+      assert.deepEqual(test(), { headers: {}, query: {} });
+      assert.deepEqual(test({}), { headers: {}, query: {} });
+      assert.deepEqual(test({ stale: true }), {
+        headers: {},
+        query: { stale: "1" },
+      });
+      assert.deepEqual(
         test(
           {},
           {
@@ -139,11 +149,12 @@ describe("utils", function () {
             query: { hello: "query" },
           },
         ),
-      ).eql({
-        headers: { hello: "headers" },
-        query: { hello: "query" },
-      });
-      should(
+        {
+          headers: { hello: "headers" },
+          query: { hello: "query" },
+        },
+      );
+      assert.deepEqual(
         test({
           dc: "dc1",
           partition: "partition1",
@@ -158,25 +169,26 @@ describe("utils", function () {
           ctx: "ctx",
           timeout: 20,
         }),
-      ).eql({
-        headers: {
-          "x-consul-token": "token1",
+        {
+          headers: {
+            "x-consul-token": "token1",
+          },
+          query: {
+            dc: "dc1",
+            partition: "partition1",
+            wan: "1",
+            consistent: "1",
+            index: 10,
+            wait: "10s",
+            near: "_agent",
+            "node-meta": ["a:b", "c:d"],
+            filter: "Meta.env == qa",
+          },
+          ctx: "ctx",
+          timeout: 20,
         },
-        query: {
-          dc: "dc1",
-          partition: "partition1",
-          wan: "1",
-          consistent: "1",
-          index: 10,
-          wait: "10s",
-          near: "_agent",
-          "node-meta": ["a:b", "c:d"],
-          filter: "Meta.env == qa",
-        },
-        ctx: "ctx",
-        timeout: 20,
-      });
-      should(test({ timeout: "10s" })).eql({
+      );
+      assert.deepEqual(test({ timeout: "10s" }), {
         headers: {},
         query: {},
         timeout: 10000,
@@ -185,7 +197,7 @@ describe("utils", function () {
 
     describe("when token is undefined", function () {
       it("should not include x-consul-token header", function () {
-        should(test({ token: undefined })).eql({
+        assert.deepEqual(test({ token: undefined }), {
           headers: {},
           query: {},
         });
@@ -194,7 +206,7 @@ describe("utils", function () {
 
     describe("when token is null", function () {
       it("should not include x-consul-token header", function () {
-        should(test({ token: null })).eql({
+        assert.deepEqual(test({ token: null }), {
           headers: {},
           query: {},
         });
@@ -203,7 +215,7 @@ describe("utils", function () {
 
     describe("when token is empty string", function () {
       it("should not include x-consul-token header", function () {
-        should(test({ token: "" })).eql({
+        assert.deepEqual(test({ token: "" }), {
           headers: {},
           query: {},
         });
@@ -212,7 +224,7 @@ describe("utils", function () {
 
     describe("when token is valid value", function () {
       it("should include x-consul-token header", function () {
-        should(test({ token: "validToken" })).eql({
+        assert.deepEqual(test({ token: "validToken" }), {
           headers: {
             "x-consul-token": "validToken",
           },
@@ -224,12 +236,13 @@ describe("utils", function () {
 
   describe("decode", function () {
     it("should work", function () {
-      should(utils.decode(null)).equal(null);
-      should(utils.decode()).equal(undefined);
-      should(utils.decode("")).equal("");
-      should(utils.decode("aGVsbG8gd29ybGQ=")).equal("hello world");
-      should(utils.decode("aGVsbG8gd29ybGQ=", {})).equal("hello world");
-      should(utils.decode("aGVsbG8gd29ybGQ=", { buffer: true })).eql(
+      assert.equal(utils.decode(null), null);
+      assert.equal(utils.decode(), undefined);
+      assert.equal(utils.decode(""), "");
+      assert.equal(utils.decode("aGVsbG8gd29ybGQ="), "hello world");
+      assert.equal(utils.decode("aGVsbG8gd29ybGQ=", {}), "hello world");
+      assert.deepEqual(
+        utils.decode("aGVsbG8gd29ybGQ=", { buffer: true }),
         Buffer.from("hello world"),
       );
     });
@@ -240,8 +253,8 @@ describe("utils", function () {
       let src = { hello: "world" };
       let dst = utils.clone(src);
 
-      should(dst).eql({ hello: "world" });
-      should(dst).not.equal(src);
+      assert.deepEqual(dst, { hello: "world" });
+      assert.notEqual(dst, src);
 
       const Obj = function () {
         this.hello = "world";
@@ -251,59 +264,59 @@ describe("utils", function () {
       src = new Obj();
       dst = utils.clone(src);
 
-      should(dst).eql({ hello: "world" });
-      should(dst).not.equal(src);
+      assert.deepEqual(dst, { hello: "world" });
+      assert.notEqual(dst, src);
     });
   });
 
   describe("parseDuration", function () {
     it("should work", function () {
-      should(utils.parseDuration(0)).equal(0);
-      should(utils.parseDuration(1000000)).equal(1);
-      should(utils.parseDuration("0")).equal(0);
-      should(utils.parseDuration("1000000")).equal(1);
+      assert.equal(utils.parseDuration(0), 0);
+      assert.equal(utils.parseDuration(1000000), 1);
+      assert.equal(utils.parseDuration("0"), 0);
+      assert.equal(utils.parseDuration("1000000"), 1);
 
-      should(utils.parseDuration("1ns")).equal(1e-6);
-      should(utils.parseDuration("1us")).equal(1e-3);
-      should(utils.parseDuration("1ms")).equal(1);
-      should(utils.parseDuration("1s")).equal(1e3);
-      should(utils.parseDuration("1m")).equal(6e4);
-      should(utils.parseDuration("1h")).equal(3.6e6);
+      assert.equal(utils.parseDuration("1ns"), 1e-6);
+      assert.equal(utils.parseDuration("1us"), 1e-3);
+      assert.equal(utils.parseDuration("1ms"), 1);
+      assert.equal(utils.parseDuration("1s"), 1e3);
+      assert.equal(utils.parseDuration("1m"), 6e4);
+      assert.equal(utils.parseDuration("1h"), 3.6e6);
 
-      should(utils.parseDuration(".5s")).equal(500);
-      should(utils.parseDuration("0.5s")).equal(500);
-      should(utils.parseDuration("1.s")).equal(1000);
-      should(utils.parseDuration("1.5s")).equal(1500);
-      should(utils.parseDuration("10.03m")).equal(601800);
+      assert.equal(utils.parseDuration(".5s"), 500);
+      assert.equal(utils.parseDuration("0.5s"), 500);
+      assert.equal(utils.parseDuration("1.s"), 1000);
+      assert.equal(utils.parseDuration("1.5s"), 1500);
+      assert.equal(utils.parseDuration("10.03m"), 601800);
 
-      should(utils.parseDuration()).be.undefined();
-      should(utils.parseDuration("")).be.undefined();
-      should(utils.parseDuration(".")).be.undefined();
-      should(utils.parseDuration("10x")).be.undefined();
-      should(utils.parseDuration(".ms")).be.undefined();
+      assert.equal(utils.parseDuration(), undefined);
+      assert.equal(utils.parseDuration(""), undefined);
+      assert.equal(utils.parseDuration("."), undefined);
+      assert.equal(utils.parseDuration("10x"), undefined);
+      assert.equal(utils.parseDuration(".ms"), undefined);
     });
   });
 
   describe("safeBigInt", function () {
     it("should work", function () {
-      should(utils.safeBigInt(0)).equal(0n);
-      should(utils.safeBigInt(-1)).equal(-1n);
-      should(utils.safeBigInt(500)).equal(500n);
-      should(utils.safeBigInt("0")).equal(0n);
-      should(utils.safeBigInt("-1")).equal(-1n);
-      should(utils.safeBigInt("500")).equal(500n);
+      assert.equal(utils.safeBigInt(0), 0n);
+      assert.equal(utils.safeBigInt(-1), -1n);
+      assert.equal(utils.safeBigInt(500), 500n);
+      assert.equal(utils.safeBigInt("0"), 0n);
+      assert.equal(utils.safeBigInt("-1"), -1n);
+      assert.equal(utils.safeBigInt("500"), 500n);
 
-      should(utils.safeBigInt("")).be.undefined();
-      should(utils.safeBigInt("a")).be.undefined();
-      should(utils.safeBigInt("1.0")).be.undefined();
-      should(utils.safeBigInt(null)).be.undefined();
-      should(utils.safeBigInt({})).be.undefined();
+      assert.equal(utils.safeBigInt(""), undefined);
+      assert.equal(utils.safeBigInt("a"), undefined);
+      assert.equal(utils.safeBigInt("1.0"), undefined);
+      assert.equal(utils.safeBigInt(null), undefined);
+      assert.equal(utils.safeBigInt({}), undefined);
     });
   });
 
   describe("createCheck", function () {
     it("should work", function () {
-      should(
+      assert.deepEqual(
         utils.createCheck({
           ID: "id",
           name: "name",
@@ -317,21 +330,22 @@ describe("utils", function () {
           failuresbeforecritical: 2,
           successBeforePassing: 3,
         }),
-      ).eql({
-        ID: "id",
-        Name: "name",
-        ServiceID: "service",
-        HTTP: "http://127.0.0.1:8000",
-        Timeout: "30s",
-        Interval: "60s",
-        Notes: "Just a note.",
-        Status: "passing",
-        FailuresBeforeWarning: 1,
-        FailuresBeforeCritical: 2,
-        SuccessBeforePassing: 3,
-      });
+        {
+          ID: "id",
+          Name: "name",
+          ServiceID: "service",
+          HTTP: "http://127.0.0.1:8000",
+          Timeout: "30s",
+          Interval: "60s",
+          Notes: "Just a note.",
+          Status: "passing",
+          FailuresBeforeWarning: 1,
+          FailuresBeforeCritical: 2,
+          SuccessBeforePassing: 3,
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createCheck({
           ID: "id",
           name: "name",
@@ -343,49 +357,52 @@ describe("utils", function () {
           status: "passing",
           deregistercriticalserviceafter: "1h",
         }),
-      ).eql({
-        ID: "id",
-        Name: "name",
-        ServiceID: "service",
-        TCP: "localhost:22",
-        TCPUseTLS: true,
-        Interval: "10s",
-        Notes: "SSH TCP on port 22",
-        Status: "passing",
-        DeregisterCriticalServiceAfter: "1h",
-      });
+        {
+          ID: "id",
+          Name: "name",
+          ServiceID: "service",
+          TCP: "localhost:22",
+          TCPUseTLS: true,
+          Interval: "10s",
+          Notes: "SSH TCP on port 22",
+          Status: "passing",
+          DeregisterCriticalServiceAfter: "1h",
+        },
+      );
     });
   });
 
   describe("createServiceCheck", function () {
     it("should work", function () {
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           args: ["/usr/bin/true"],
           interval: "30s",
           timeout: "5s",
         }),
-      ).eql({
-        Args: ["/usr/bin/true"],
-        Interval: "30s",
-        Timeout: "5s",
-      });
+        {
+          Args: ["/usr/bin/true"],
+          Interval: "30s",
+          Timeout: "5s",
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           script: "/usr/bin/true",
           interval: "30s",
           shell: "/bin/sh",
           dockercontainerid: "123",
         }),
-      ).eql({
-        Script: "/usr/bin/true",
-        Interval: "30s",
-        Shell: "/bin/sh",
-        DockerContainerID: "123",
-      });
+        {
+          Script: "/usr/bin/true",
+          Interval: "30s",
+          Shell: "/bin/sh",
+          DockerContainerID: "123",
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           grpc: "localhost:50051",
           interval: "5s",
@@ -393,15 +410,16 @@ describe("utils", function () {
           tlsskipverify: true,
           outputmaxsize: 4096,
         }),
-      ).eql({
-        GRPC: "localhost:50051",
-        Interval: "5s",
-        TLSSkipVerify: true,
-        TLSServerName: "server",
-        OutputMaxSize: 4096,
-      });
+        {
+          GRPC: "localhost:50051",
+          Interval: "5s",
+          TLSSkipVerify: true,
+          TLSServerName: "server",
+          OutputMaxSize: 4096,
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           http: "https://example.com/test",
           body: "{}",
@@ -410,114 +428,128 @@ describe("utils", function () {
           method: "POST",
           interval: "5s",
         }),
-      ).eql({
-        HTTP: "https://example.com/test",
-        Body: "{}",
-        DisableRedirects: true,
-        Header: { authorization: ["one"] },
-        Method: "POST",
-        Interval: "5s",
-      });
+        {
+          HTTP: "https://example.com/test",
+          Body: "{}",
+          DisableRedirects: true,
+          Header: { authorization: ["one"] },
+          Method: "POST",
+          Interval: "5s",
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           h2ping: "https://example.com/test",
           interval: "5s",
         }),
-      ).eql({
-        H2Ping: "https://example.com/test",
-        Interval: "5s",
-      });
+        {
+          H2Ping: "https://example.com/test",
+          Interval: "5s",
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           h2ping: "http://example.com/test",
           h2pingusetls: false,
           interval: "5s",
         }),
-      ).eql({
-        H2Ping: "http://example.com/test",
-        Interval: "5s",
-        H2PingUseTLS: false,
-      });
+        {
+          H2Ping: "http://example.com/test",
+          Interval: "5s",
+          H2PingUseTLS: false,
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           grpc: "localhost:50051",
           grpcusetls: true,
           interval: "10s",
         }),
-      ).eql({
-        GRPC: "localhost:50051",
-        GRPCUseTLS: true,
-        Interval: "10s",
-      });
+        {
+          GRPC: "localhost:50051",
+          GRPCUseTLS: true,
+          Interval: "10s",
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           udp: "localhost:50051",
           interval: "10s",
         }),
-      ).eql({
-        UDP: "localhost:50051",
-        Interval: "10s",
-      });
+        {
+          UDP: "localhost:50051",
+          Interval: "10s",
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           tcp: "localhost:50051",
           interval: "10s",
         }),
-      ).eql({
-        TCP: "localhost:50051",
-        Interval: "10s",
-      });
+        {
+          TCP: "localhost:50051",
+          Interval: "10s",
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           tcp: "localhost:50051",
           interval: "10s",
           tcpusetls: true,
         }),
-      ).eql({
-        TCP: "localhost:50051",
-        Interval: "10s",
-        TCPUseTLS: true,
-      });
+        {
+          TCP: "localhost:50051",
+          Interval: "10s",
+          TCPUseTLS: true,
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           ttl: "15s",
         }),
-      ).eql({
-        TTL: "15s",
-      });
+        {
+          TTL: "15s",
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           aliasnode: "web1",
         }),
-      ).eql({
-        AliasNode: "web1",
-      });
+        {
+          AliasNode: "web1",
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createServiceCheck({
           aliasservice: "web",
         }),
-      ).eql({
-        AliasService: "web",
-      });
+        {
+          AliasService: "web",
+        },
+      );
     });
 
     it(
       "should require args, grpc, http, tcp and interval, ttl, or " +
         "aliasnode/aliasservice",
       () => {
-        should(() => {
-          utils.createCheck();
-        }).throw(
-          "args/grpc/h2ping/http/tcp/udp and interval, ttl, or aliasnode/aliasservice",
+        assert.throws(
+          () => {
+            utils.createCheck();
+          },
+          {
+            message:
+              "args/grpc/h2ping/http/tcp/udp and interval, ttl, or aliasnode/aliasservice",
+          },
         );
       },
     );
@@ -525,50 +557,54 @@ describe("utils", function () {
 
   describe("createCatalogDeregistration", function () {
     it("should work", function () {
-      should(
+      assert.deepEqual(
         utils.createCatalogDeregistration({
           node: "node",
           checkid: "check",
           serviceid: "service",
         }),
-      ).eql({
-        Node: "node",
-        CheckID: "check",
-        ServiceID: "service",
-      });
+        {
+          Node: "node",
+          CheckID: "check",
+          ServiceID: "service",
+        },
+      );
     });
     it("should work", function () {
-      should(utils.createCatalogDeregistration({})).eql({});
+      assert.deepEqual(utils.createCatalogDeregistration({}), {});
     });
   });
 
   describe("createCatalogRegistration", function () {
     it("throw on missing grpc/http/tcp", function () {
-      should(() => {
-        utils.createCatalogRegistration({
-          id: "123",
-          node: "node",
-          nodeMeta: { "external-node": "true" },
-          check: {
-            node: "foo",
-            checkID: "service:web1",
-            serviceid: "service",
-            name: "Web HTTP check",
-            definition: {
-              intervalduration: "5s",
+      assert.throws(
+        () => {
+          utils.createCatalogRegistration({
+            id: "123",
+            node: "node",
+            nodeMeta: { "external-node": "true" },
+            check: {
+              node: "foo",
+              checkID: "service:web1",
+              serviceid: "service",
+              name: "Web HTTP check",
+              definition: {
+                intervalduration: "5s",
+              },
+              notes: "http node check",
+              status: "critical",
             },
-            notes: "http node check",
-            status: "critical",
-          },
-          service: { id: "service" },
-          address: "10.0.0.1",
-          skipnodeupdate: true,
-        });
-      }).throw("at least one of http/tcp is required");
+            service: { id: "service" },
+            address: "10.0.0.1",
+            skipnodeupdate: true,
+          });
+        },
+        { message: "at least one of http/tcp is required" },
+      );
     });
 
     it("should work", function () {
-      should(
+      assert.deepEqual(
         utils.createCatalogRegistration({
           id: "123",
           node: "node",
@@ -589,30 +625,31 @@ describe("utils", function () {
           address: "10.0.0.1",
           skipnodeupdate: true,
         }),
-      ).eql({
-        ID: "123",
-        Node: "node",
-        NodeMeta: { "external-node": "true" },
-        Check: {
-          Node: "foo",
-          CheckID: "service:web1",
-          ServiceID: "service",
-          Name: "Web HTTP check",
-          Definition: {
-            HTTP: "http://example.org/",
-            IntervalDuration: "5s",
+        {
+          ID: "123",
+          Node: "node",
+          NodeMeta: { "external-node": "true" },
+          Check: {
+            Node: "foo",
+            CheckID: "service:web1",
+            ServiceID: "service",
+            Name: "Web HTTP check",
+            Definition: {
+              HTTP: "http://example.org/",
+              IntervalDuration: "5s",
+            },
+            Notes: "http node check",
+            Status: "critical",
           },
-          Notes: "http node check",
-          Status: "critical",
+          Service: { ID: "service" },
+          Address: "10.0.0.1",
+          SkipNodeUpdate: true,
         },
-        Service: { ID: "service" },
-        Address: "10.0.0.1",
-        SkipNodeUpdate: true,
-      });
+      );
     });
 
     it("should work", function () {
-      should(
+      assert.deepEqual(
         utils.createCatalogRegistration({
           id: "123",
           node: "node",
@@ -648,60 +685,62 @@ describe("utils", function () {
           },
           address: "10.0.0.1",
         }),
-      ).eql({
-        ID: "123",
-        Node: "node",
-        NodeMeta: { "node-meta": "true" },
-        Checks: [
-          {
-            Name: "check2",
-            Definition: {
-              HTTP: "https://127.0.0.1:8000",
-              TLSSkipVerify: true,
-              TLSServerName: "fqdn",
-              IntervalDuration: "60s",
-              DeregisterCriticalServiceAfterDuration: "120s",
+        {
+          ID: "123",
+          Node: "node",
+          NodeMeta: { "node-meta": "true" },
+          Checks: [
+            {
+              Name: "check2",
+              Definition: {
+                HTTP: "https://127.0.0.1:8000",
+                TLSSkipVerify: true,
+                TLSServerName: "fqdn",
+                IntervalDuration: "60s",
+                DeregisterCriticalServiceAfterDuration: "120s",
+              },
             },
-          },
-          {
-            Name: "check3",
-            Definition: {
-              TCP: "127.0.0.1:8000",
-              IntervalDuration: "60s",
-              TimeoutDuration: "10s",
+            {
+              Name: "check3",
+              Definition: {
+                TCP: "127.0.0.1:8000",
+                IntervalDuration: "60s",
+                TimeoutDuration: "10s",
+              },
             },
+            {},
+          ],
+          Service: {
+            Service: "service",
+            ID: "service",
+            Tags: [],
+            Meta: { defaultContext: "/nodeapi" },
+            Address: "127.0.0.1",
+            Port: 1234,
           },
-          {},
-        ],
-        Service: {
-          Service: "service",
-          ID: "service",
-          Tags: [],
-          Meta: { defaultContext: "/nodeapi" },
-          Address: "127.0.0.1",
-          Port: 1234,
+          Address: "10.0.0.1",
         },
-        Address: "10.0.0.1",
-      });
+      );
     });
-    should(
+    assert.deepEqual(
       utils.createCatalogRegistration({
         taggedaddresses: {},
       }),
-    ).eql({
-      TaggedAddresses: {},
-    });
+      {
+        TaggedAddresses: {},
+      },
+    );
   });
 
   describe("createCatalogService", function () {
     it("should work", function () {
-      should(utils.createCatalogService({})).eql({});
+      assert.deepEqual(utils.createCatalogService({}), {});
     });
   });
 
   describe("createService", function () {
     it("should work", function () {
-      should(
+      assert.deepEqual(
         utils.createService({
           id: "123",
           name: "service",
@@ -716,22 +755,23 @@ describe("utils", function () {
           address: "10.0.0.1",
           port: 80,
         }),
-      ).eql({
-        ID: "123",
-        Name: "service",
-        Tags: ["web"],
-        Meta: { defaultContext: "/nodeapi" },
-        Check: {
-          HTTP: "http://example.org/",
-          Interval: "5s",
-          Notes: "http service check",
-          Status: "critical",
+        {
+          ID: "123",
+          Name: "service",
+          Tags: ["web"],
+          Meta: { defaultContext: "/nodeapi" },
+          Check: {
+            HTTP: "http://example.org/",
+            Interval: "5s",
+            Notes: "http service check",
+            Status: "critical",
+          },
+          Address: "10.0.0.1",
+          Port: 80,
         },
-        Address: "10.0.0.1",
-        Port: 80,
-      });
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           name: "service",
           check: {
@@ -739,15 +779,16 @@ describe("utils", function () {
             interval: "5s",
           },
         }),
-      ).eql({
-        Name: "service",
-        Check: {
-          Script: "true",
-          Interval: "5s",
+        {
+          Name: "service",
+          Check: {
+            Script: "true",
+            Interval: "5s",
+          },
         },
-      });
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           id: "123",
           name: "service",
@@ -756,16 +797,17 @@ describe("utils", function () {
             notes: "ttl service check",
           },
         }),
-      ).eql({
-        ID: "123",
-        Name: "service",
-        Check: {
-          TTL: "10s",
-          Notes: "ttl service check",
+        {
+          ID: "123",
+          Name: "service",
+          Check: {
+            TTL: "10s",
+            Notes: "ttl service check",
+          },
         },
-      });
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           id: "123",
           name: "service",
@@ -780,34 +822,36 @@ describe("utils", function () {
             { http: "http://127.0.0.1:8000", interval: "60s" },
           ],
         }),
-      ).eql({
-        ID: "123",
-        Name: "service",
-        Checks: [
-          { TTL: "10s" },
-          {
-            TTL: "10s",
-            Name: "service-check-name-1",
-            CheckID: "service-check-id-1",
-            Notes: "service-check-notes-1",
-          },
-          { HTTP: "http://127.0.0.1:8000", Interval: "60s" },
-        ],
-      });
+        {
+          ID: "123",
+          Name: "service",
+          Checks: [
+            { TTL: "10s" },
+            {
+              TTL: "10s",
+              Name: "service-check-name-1",
+              CheckID: "service-check-id-1",
+              Notes: "service-check-notes-1",
+            },
+            { HTTP: "http://127.0.0.1:8000", Interval: "60s" },
+          ],
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           connect: {
             native: true,
           },
         }),
-      ).eql({
-        Connect: {
-          Native: true,
+        {
+          Connect: {
+            Native: true,
+          },
         },
-      });
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           connect: {
             sidecar_service: {
@@ -818,18 +862,19 @@ describe("utils", function () {
             },
           },
         }),
-      ).eql({
-        Connect: {
-          SidecarService: {
-            Check: {
-              Script: "true",
-              Interval: "5s",
+        {
+          Connect: {
+            SidecarService: {
+              Check: {
+                Script: "true",
+                Interval: "5s",
+              },
             },
           },
         },
-      });
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           connect: {
             sidecarservice: {
@@ -839,17 +884,18 @@ describe("utils", function () {
             },
           },
         }),
-      ).eql({
-        Connect: {
-          SidecarService: {
-            Proxy: {
-              DestinationServiceName: "test",
+        {
+          Connect: {
+            SidecarService: {
+              Proxy: {
+                DestinationServiceName: "test",
+              },
             },
           },
         },
-      });
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           connect: {
             proxy: {
@@ -864,44 +910,47 @@ describe("utils", function () {
             },
           },
         }),
-      ).eql({
-        Connect: {
-          Proxy: {
-            DestinationServiceName: "test",
-            DestinationServiceID: "123",
-            LocalServiceAddress: "127.0.0.1",
-            LocalServicePort: 8080,
-            Config: {},
-            Upstreams: [],
-            MeshGateway: {},
-            Expose: {},
+        {
+          Connect: {
+            Proxy: {
+              DestinationServiceName: "test",
+              DestinationServiceID: "123",
+              LocalServiceAddress: "127.0.0.1",
+              LocalServicePort: 8080,
+              Config: {},
+              Upstreams: [],
+              MeshGateway: {},
+              Expose: {},
+            },
           },
         },
-      });
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           taggedaddresses: {},
         }),
-      ).eql({
-        TaggedAddresses: {},
-      });
+        {
+          TaggedAddresses: {},
+        },
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           taggedaddresses: {
             lan: {},
             wan: {},
           },
         }),
-      ).eql({
-        TaggedAddresses: {
-          lan: {},
-          wan: {},
+        {
+          TaggedAddresses: {
+            lan: {},
+            wan: {},
+          },
         },
-      });
+      );
 
-      should(
+      assert.deepEqual(
         utils.createService({
           taggedaddresses: {
             lan: {
@@ -914,56 +963,63 @@ describe("utils", function () {
             },
           },
         }),
-      ).eql({
-        TaggedAddresses: {
-          lan: {
-            Address: "127.0.0.1",
-            Port: 8080,
-          },
-          wan: {
-            Address: "10.0.0.1",
-            Port: 80,
+        {
+          TaggedAddresses: {
+            lan: {
+              Address: "127.0.0.1",
+              Port: 8080,
+            },
+            wan: {
+              Address: "10.0.0.1",
+              Port: 80,
+            },
           },
         },
-      });
+      );
     });
 
     it("should not allow nested sidecars", function () {
-      should(() => {
-        utils.createService({
-          connect: {
-            sidecar_service: {
-              connect: {
-                SidecarService: {},
+      assert.throws(
+        () => {
+          utils.createService({
+            connect: {
+              sidecar_service: {
+                connect: {
+                  SidecarService: {},
+                },
               },
             },
-          },
-        });
-      }).throw("sidecarservice cannot be nested");
+          });
+        },
+        { message: "sidecarservice cannot be nested" },
+      );
     });
 
     it("should require proxy destination service name", function () {
-      should(() => {
-        utils.createService({
-          proxy: {},
-        });
-      }).throw("destinationservicename required");
+      assert.throws(
+        () => {
+          utils.createService({
+            proxy: {},
+          });
+        },
+        { message: "destinationservicename required" },
+      );
     });
   });
 
   describe("hasIndexChanged", function () {
     it("should work", function () {
-      should(utils.hasIndexChanged()).equal(false);
-      should(utils.hasIndexChanged("")).equal(false);
-      should(utils.hasIndexChanged(0n)).equal(false);
-      should(utils.hasIndexChanged(1n)).equal(true);
-      should(utils.hasIndexChanged(1n, "")).equal(true);
-      should(utils.hasIndexChanged(10n, 1n)).equal(true);
-      should(utils.hasIndexChanged(0n, 1n)).equal(false);
-      should(utils.hasIndexChanged(1n, 1n)).equal(false);
-      should(utils.hasIndexChanged(1n, 0n)).equal(true);
-      should(utils.hasIndexChanged(2n, 1n)).equal(true);
-      should(utils.hasIndexChanged(2n, 2n)).equal(false);
+      assert.equal(utils.hasIndexChanged(), false);
+      assert.equal(utils.hasIndexChanged(""), false);
+      assert.equal(utils.hasIndexChanged(0n), false);
+      assert.equal(utils.hasIndexChanged(1n), true);
+      assert.equal(utils.hasIndexChanged(1n, ""), true);
+      assert.equal(utils.hasIndexChanged(10n, 1n), true);
+      assert.equal(utils.hasIndexChanged(0n, 1n), false);
+      assert.equal(utils.hasIndexChanged(1n, 1n), false);
+      assert.equal(utils.hasIndexChanged(1n, 0n), true);
+      assert.equal(utils.hasIndexChanged(2n, 1n), true);
+      assert.equal(utils.hasIndexChanged(2n, 2n), false);
     });
   });
 });

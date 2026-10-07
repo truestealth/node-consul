@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -10,14 +10,14 @@ describe("Status", function () {
       this.nock.get("/v1/status/leader").reply(200, { ok: true });
 
       const data = await this.consul.status.leader({});
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with no arguments", async function () {
       this.nock.get("/v1/status/leader").reply(200, { ok: true });
 
       const data = await this.consul.status.leader();
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
   });
 
@@ -26,14 +26,14 @@ describe("Status", function () {
       this.nock.get("/v1/status/peers").reply(200, [{ ok: true }]);
 
       const data = await this.consul.status.peers({});
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
 
     it("should work with no arguments", async function () {
       this.nock.get("/v1/status/peers").reply(200, [{ ok: true }]);
 
       const data = await this.consul.status.peers();
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
   });
 });

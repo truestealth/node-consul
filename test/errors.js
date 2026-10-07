@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as errors from "../lib/errors.js";
 
@@ -12,24 +12,24 @@ describe("errors", function () {
       const msg = "test message";
 
       let err = errors.Consul(msg);
-      should(err).have.property("isConsul", true);
-      should(err).have.property("message", msg);
+      assert.deepEqual(err.isConsul, true);
+      assert.deepEqual(err.message, msg);
 
       const test = new Error(msg);
       test.isTest = true;
 
       err = errors.Consul(test);
-      should(err).have.property("message", msg);
-      should(err).have.property("isConsul", true);
-      should(err).have.property("isTest", true);
+      assert.deepEqual(err.message, msg);
+      assert.deepEqual(err.isConsul, true);
+      assert.deepEqual(err.isTest, true);
 
       err = errors.Consul(null);
-      should(err).not.have.property("message", undefined);
-      should(err).have.property("isConsul", true);
+      assert.ok(!("message" in err) || err.message !== undefined);
+      assert.deepEqual(err.isConsul, true);
 
       err = errors.Consul("");
-      should(err).not.have.property("message", undefined);
-      should(err).have.property("isConsul", true);
+      assert.ok(!("message" in err) || err.message !== undefined);
+      assert.deepEqual(err.isConsul, true);
     });
   });
 
@@ -38,11 +38,11 @@ describe("errors", function () {
       const msg = "test";
       const err = errors.Validation(msg);
 
-      should(err).have.property("isConsul", true);
-      should(err).have.property("isValidation", true);
-      should(err).have.property("message", msg);
+      assert.deepEqual(err.isConsul, true);
+      assert.deepEqual(err.isValidation, true);
+      assert.deepEqual(err.message, msg);
 
-      should(errors.Validation).not.have.property("message");
+      assert.ok(!("message" in errors.Validation));
     });
   });
 });

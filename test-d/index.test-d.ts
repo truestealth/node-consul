@@ -1,12 +1,12 @@
-import { expectType, expectError } from "tsd";
+import { expectTypeOf } from "expect-type";
 import { EventEmitter } from "node:events";
 
 import Consul, { Consul as NamedConsul } from "../lib/index.js";
 
 const consul = new Consul();
 
-expectType<typeof Consul>(NamedConsul);
-expectType<Consul>(consul);
+expectTypeOf(NamedConsul).toEqualTypeOf<typeof Consul>();
+expectTypeOf(consul).toEqualTypeOf<Consul>();
 
 consul.health.node({
   node: "node1",
@@ -23,5 +23,7 @@ consul.agent.service.register({
   name: "service1",
   check: { name: "check1", ttl: "10s" },
 });
-expectError(consul.health.node({ name: "node1" }));
-expectError(consul.health.node({ node: "node1", timeout: false }));
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.health.node({ name: "node1" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.health.node({ node: "node1", timeout: false });

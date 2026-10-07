@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -26,14 +26,14 @@ describe("Session", function () {
         behavior: "release",
         ttl: "5s",
       });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with no arguments", async function () {
       this.nock.put("/v1/session/create", {}).reply(200, { ok: true });
 
       const data = await this.consul.session.create();
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
   });
 
@@ -53,13 +53,10 @@ describe("Session", function () {
     it("should require ID", async function () {
       try {
         await this.consul.session.destroy({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: session.destroy: id required",
-        );
-        should(err).have.property("isValidation", true);
+        assert.deepEqual(err.message, "consul: session.destroy: id required");
+        assert.deepEqual(err.isValidation, true);
       }
     });
   });
@@ -69,33 +66,30 @@ describe("Session", function () {
       this.nock.get("/v1/session/info/123").reply(200, [{ ok: true }]);
 
       const data = await this.consul.session.info({ id: "123" });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work using get alias", async function () {
       this.nock.get("/v1/session/info/123").reply(200, [{ ok: true }]);
 
       const data = await this.consul.session.get({ id: "123" });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with string ID", async function () {
       this.nock.get("/v1/session/info/123").reply(200, []);
 
       const data = await this.consul.session.info("123");
-      should.not.exist(data);
+      assert.ok(data == null);
     });
 
     it("should require ID", async function () {
       try {
         await this.consul.session.info({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: session.info: id required",
-        );
-        should(err).have.property("isValidation", true);
+        assert.deepEqual(err.message, "consul: session.info: id required");
+        assert.deepEqual(err.isValidation, true);
       }
     });
   });
@@ -105,25 +99,22 @@ describe("Session", function () {
       this.nock.get("/v1/session/node/node1").reply(200, { ok: true });
 
       const data = await this.consul.session.node({ node: "node1" });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with string ID", async function () {
       this.nock.get("/v1/session/node/node1").reply(200, { ok: true });
 
       const data = await this.consul.session.node("node1");
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require node", async function () {
       try {
         await this.consul.session.node({});
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: session.node: node required",
-        );
-        should(err).have.property("isValidation", true);
+        assert.deepEqual(err.message, "consul: session.node: node required");
+        assert.deepEqual(err.isValidation, true);
       }
     });
   });
@@ -133,14 +124,14 @@ describe("Session", function () {
       this.nock.get("/v1/session/list").reply(200, [{ ok: true }]);
 
       const data = await this.consul.session.list({});
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
 
     it("should work with string ID", async function () {
       this.nock.get("/v1/session/list").reply(200, [{ ok: true }]);
 
       const data = await this.consul.session.list();
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
   });
 
@@ -149,25 +140,22 @@ describe("Session", function () {
       this.nock.put("/v1/session/renew/123").reply(200, { ok: true });
 
       const data = await this.consul.session.renew({ id: "123" });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with string", async function () {
       this.nock.put("/v1/session/renew/123").reply(200, { ok: true });
 
       const data = await this.consul.session.renew("123");
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require ID", async function () {
       try {
         await this.consul.session.renew({});
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: session.renew: id required",
-        );
-        should(err).have.property("isValidation", true);
+        assert.deepEqual(err.message, "consul: session.renew: id required");
+        assert.deepEqual(err.isValidation, true);
       }
     });
   });

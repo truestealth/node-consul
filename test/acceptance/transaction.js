@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -45,35 +45,31 @@ helper.describe("Transaction", function () {
         },
       ]);
 
-      should(response).have.property("Results");
-      should(response.Results).be.Array();
+      assert.ok("Results" in response);
+      assert.ok(Array.isArray(response.Results));
 
       const results = response.Results;
-      should(results).have.length(2);
-      should(results[0]).have.property("KV");
-      should(results[1]).have.property("KV");
-      should(results[0].KV).have.keys(
-        "CreateIndex",
-        "ModifyIndex",
-        "LockIndex",
-        "Key",
-        "Flags",
+      assert.equal(results.length, 2);
+      assert.ok("KV" in results[0]);
+      assert.ok("KV" in results[1]);
+      assert.ok(
+        ["CreateIndex", "ModifyIndex", "LockIndex", "Key", "Flags"].every(
+          (key) => Object.hasOwn(results[0].KV, key),
+        ),
       );
-      should(results[1].KV).have.keys(
-        "CreateIndex",
-        "ModifyIndex",
-        "LockIndex",
-        "Key",
-        "Flags",
+      assert.ok(
+        ["CreateIndex", "ModifyIndex", "LockIndex", "Key", "Flags"].every(
+          (key) => Object.hasOwn(results[1].KV, key),
+        ),
       );
 
       const data1 = await this.c1.kv.get(key1);
-      should(data1).have.property("Value");
-      should(data1.Value).eql(value1);
+      assert.ok("Value" in data1);
+      assert.deepEqual(data1.Value, value1);
 
       const data2 = await this.c1.kv.get(key2);
-      should(data2).have.property("Value");
-      should(data2.Value).eql(value2);
+      assert.ok("Value" in data2);
+      assert.deepEqual(data2.Value, value2);
     });
   });
 });

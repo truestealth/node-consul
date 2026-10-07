@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -10,14 +10,14 @@ describe("Agent", function () {
       this.nock.get("/v1/agent/checks").reply(200, [{ ok: true }]);
 
       const data = await this.consul.agent.checks({});
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
 
     it("should work with no arguments", async function () {
       this.nock.get("/v1/agent/checks").reply(200, [{ ok: true }]);
 
       const data = await this.consul.agent.checks();
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
   });
 
@@ -27,14 +27,14 @@ describe("Agent", function () {
         this.nock.get("/v1/agent/checks").reply(200, [{ ok: true }]);
 
         const data = await this.consul.agent.check.list({});
-        should(data).eql([{ ok: true }]);
+        assert.deepEqual(data, [{ ok: true }]);
       });
 
       it("should work with no arguments", async function () {
         this.nock.get("/v1/agent/checks").reply(200, [{ ok: true }]);
 
         const data = await this.consul.agent.check.list();
-        should(data).eql([{ ok: true }]);
+        assert.deepEqual(data, [{ ok: true }]);
       });
     });
 
@@ -107,10 +107,10 @@ describe("Agent", function () {
             name: "test",
             serviceid: "service",
           });
-          should.ok(false);
+          assert.ok(false);
         } catch (err) {
-          should(err).property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.check.register: args/grpc/h2ping/http/tcp/udp and interval, " +
               "ttl, or aliasnode/aliasservice",
           );
@@ -123,10 +123,10 @@ describe("Agent", function () {
             http: "http://localhost:5000/health",
             interval: "10s",
           });
-          should.ok(false);
+          assert.ok(false);
         } catch (err) {
-          should(err).property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.check.register: name required",
           );
         }
@@ -149,10 +149,10 @@ describe("Agent", function () {
       it("should require id", async function () {
         try {
           await this.consul.agent.check.deregister({});
-          should.ok(false);
+          assert.ok(false);
         } catch (err) {
-          should(err).property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.check.deregister: id required",
           );
         }
@@ -178,10 +178,10 @@ describe("Agent", function () {
       it("should require id", async function () {
         try {
           await this.consul.agent.check.pass({});
-          should.ok(false);
+          assert.ok(false);
         } catch (err) {
-          should(err).property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.check.pass: id required",
           );
         }
@@ -207,10 +207,10 @@ describe("Agent", function () {
       it("should require id", async function () {
         try {
           await this.consul.agent.check.warn({});
-          should.ok(false);
+          assert.ok(false);
         } catch (err) {
-          should(err).property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.check.warn: id required",
           );
         }
@@ -236,10 +236,10 @@ describe("Agent", function () {
       it("should require id", async function () {
         try {
           await this.consul.agent.check.fail({});
-          should.ok(false);
+          assert.ok(false);
         } catch (err) {
-          should(err).property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.check.fail: id required",
           );
         }
@@ -252,14 +252,14 @@ describe("Agent", function () {
       this.nock.get("/v1/agent/services").reply(200, [{ ok: true }]);
 
       const data = await this.consul.agent.services({});
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
 
     it("should work with no arguments", async function () {
       this.nock.get("/v1/agent/services").reply(200, [{ ok: true }]);
 
       const data = await this.consul.agent.services();
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
   });
 
@@ -269,14 +269,14 @@ describe("Agent", function () {
         this.nock.get("/v1/agent/services").reply(200, [{ ok: true }]);
 
         const data = await this.consul.agent.service.list({});
-        should(data).eql([{ ok: true }]);
+        assert.deepEqual(data, [{ ok: true }]);
       });
 
       it("should work with no arguments", async function () {
         this.nock.get("/v1/agent/services").reply(200, [{ ok: true }]);
 
         const data = await this.consul.agent.service.list();
-        should(data).eql([{ ok: true }]);
+        assert.deepEqual(data, [{ ok: true }]);
       });
     });
 
@@ -301,7 +301,7 @@ describe("Agent", function () {
           name: "consul-smoke-service",
           check: { ttl: "30s", deregistercriticalserviceafter: "1m" },
         });
-        should(result).equal(undefined);
+        assert.equal(result, undefined);
       });
 
       it("should require valid check", async function () {
@@ -311,8 +311,8 @@ describe("Agent", function () {
             check: {},
           });
         } catch (err) {
-          should(err).property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.service.register: args/grpc/h2ping/http/tcp/udp and interval, " +
               "ttl, or aliasnode/aliasservice",
           );
@@ -323,8 +323,8 @@ describe("Agent", function () {
         try {
           await this.consul.agent.service.register({});
         } catch (err) {
-          should(err).property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.service.register: name required",
           );
         }
@@ -348,8 +348,8 @@ describe("Agent", function () {
         try {
           await this.consul.agent.service.deregister({});
         } catch (err) {
-          should(err).property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.service.deregister: id required",
           );
         }
@@ -380,26 +380,26 @@ describe("Agent", function () {
       it("should require id", async function () {
         try {
           await this.consul.agent.service.maintenance({});
-          should.ok(false);
+          assert.ok(false);
         } catch (err) {
-          should(err).have.property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.service.maintenance: id required",
           );
-          should(err).have.property("isValidation", true);
+          assert.deepEqual(err.isValidation, true);
         }
       });
 
       it("should require enable", async function () {
         try {
           await this.consul.agent.service.maintenance({ id: 123 });
-          should.ok(false);
+          assert.ok(false);
         } catch (err) {
-          should(err).have.property(
-            "message",
+          assert.deepEqual(
+            err.message,
             "consul: agent.service.maintenance: enable required",
           );
-          should(err).have.property("isValidation", true);
+          assert.deepEqual(err.isValidation, true);
         }
       });
     });
@@ -410,14 +410,14 @@ describe("Agent", function () {
       this.nock.get("/v1/agent/members").reply(200, [{ ok: true }]);
 
       const data = await this.consul.agent.members({});
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
 
     it("should work with no arguments", async function () {
       this.nock.get("/v1/agent/members").reply(200, [{ ok: true }]);
 
       const data = await this.consul.agent.members();
-      should(data).eql([{ ok: true }]);
+      assert.deepEqual(data, [{ ok: true }]);
     });
   });
 
@@ -440,14 +440,14 @@ describe("Agent", function () {
       this.nock.get("/v1/agent/self").reply(200, { ok: true });
 
       const data = await this.consul.agent.self({});
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with no arguments", async function () {
       this.nock.get("/v1/agent/self").reply(200, { ok: true });
 
       const data = await this.consul.agent.self();
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
   });
 
@@ -468,11 +468,11 @@ describe("Agent", function () {
       try {
         await this.consul.agent.maintenance({});
       } catch (err) {
-        should(err).have.property(
-          "message",
+        assert.deepEqual(
+          err.message,
           "consul: agent.maintenance: enable required",
         );
-        should(err).have.property("isValidation", true);
+        assert.deepEqual(err.isValidation, true);
       }
     });
   });
@@ -493,13 +493,10 @@ describe("Agent", function () {
     it("should require address", async function () {
       try {
         await this.consul.agent.join({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: agent.join: address required",
-        );
-        should(err).have.property("isValidation", true);
+        assert.deepEqual(err.message, "consul: agent.join: address required");
+        assert.deepEqual(err.isValidation, true);
       }
     });
   });
@@ -520,13 +517,13 @@ describe("Agent", function () {
     it("should require node", async function () {
       try {
         await this.consul.agent.forceLeave({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
+        assert.deepEqual(
+          err.message,
           "consul: agent.forceLeave: node required",
         );
-        should(err).have.property("isValidation", true);
+        assert.deepEqual(err.isValidation, true);
       }
     });
   });

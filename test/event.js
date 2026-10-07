@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -18,14 +18,14 @@ describe("Event", function () {
         service: "service1",
         tag: "tag1",
       });
-      should(data).eql({ ok: true, Payload: "test" });
+      assert.deepEqual(data, { ok: true, Payload: "test" });
     });
 
     it("should work with two arguments", async function () {
       this.nock.put("/v1/event/fire/name", "test").reply(200, { ok: true });
 
       const data = await this.consul.event.fire("name", Buffer.from("test"));
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with one argument", async function () {
@@ -33,21 +33,18 @@ describe("Event", function () {
 
       try {
         await this.consul.event.fire("name");
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property("message", "internal server error");
+        assert.deepEqual(err.message, "internal server error");
       }
     });
 
     it("should require name", async function () {
       try {
         await this.consul.event.fire({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: event.fire: name required",
-        );
+        assert.deepEqual(err.message, "consul: event.fire: name required");
       }
     });
   });
@@ -59,7 +56,7 @@ describe("Event", function () {
         .reply(200, [{ ok: true, Payload: "dGVzdA==" }, { ok: true }]);
 
       const data = await this.consul.event.list({ name: "name1" });
-      should(data).eql([{ ok: true, Payload: "test" }, { ok: true }]);
+      assert.deepEqual(data, [{ ok: true, Payload: "test" }, { ok: true }]);
     });
 
     it("should work with one argument", async function () {
@@ -73,9 +70,9 @@ describe("Event", function () {
 
       try {
         await this.consul.event.list();
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property("message", "internal server error");
+        assert.deepEqual(err.message, "internal server error");
       }
     });
   });

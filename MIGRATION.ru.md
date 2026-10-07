@@ -13,7 +13,7 @@
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.2.0
+npm install @truestealth/consul@1.2.1
 ```
 
 Если scoped-пакет уже используется, удалять `consul` не требуется. Проверьте

@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 
 import * as helper from "./helper.js";
@@ -23,33 +23,35 @@ helper.describe("Event", function () {
   describe("fire", function () {
     it("should fire an event", async function () {
       const event = await this.c1.event.fire("test");
-      should(event).have.keys(
-        "ID",
-        "Name",
-        "Payload",
-        "NodeFilter",
-        "ServiceFilter",
-        "TagFilter",
-        "Version",
-        "LTime",
+      assert.ok(
+        [
+          "ID",
+          "Name",
+          "Payload",
+          "NodeFilter",
+          "ServiceFilter",
+          "TagFilter",
+          "Version",
+          "LTime",
+        ].every((key) => Object.hasOwn(event, key)),
       );
-      should(event.Name).equal("test");
+      assert.equal(event.Name, "test");
     });
   });
 
   describe("list", function () {
     it("should return events", async function () {
       const events = await this.c1.event.list();
-      should(events).not.be.empty();
+      assert.ok(events.length > 0);
     });
 
     it("should return event with given name", async function () {
       const events = await this.c1.event.list(this.name);
-      should(events).not.be.empty();
-      should(events.length).equal(1);
-      should(events[0].ID).equal(this.event.ID);
-      should(events[0].Name).equal(this.name);
-      should(events[0].Payload).equal(this.payload);
+      assert.ok(events.length > 0);
+      assert.equal(events.length, 1);
+      assert.equal(events[0].ID, this.event.ID);
+      assert.equal(events[0].Name, this.name);
+      assert.equal(events[0].Payload, this.payload);
     });
 
     it("should return payload as buffer", async function () {
@@ -57,8 +59,8 @@ helper.describe("Event", function () {
         name: this.name,
         buffer: true,
       });
-      should(events).not.be.empty();
-      should(events[0].Payload).eql(this.bufferPayload);
+      assert.ok(events.length > 0);
+      assert.deepEqual(events[0].Payload, this.bufferPayload);
     });
   });
 });

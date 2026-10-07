@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
@@ -31,7 +30,10 @@ try {
     ],
     { ...options, cwd: root },
   );
-  const [archive] = JSON.parse(packed.stdout);
+  const result = JSON.parse(packed.stdout);
+  const archives = Array.isArray(result) ? result : Object.values(result);
+  assert.equal(archives.length, 1);
+  const [archive] = archives;
   const files = archive.files.map((file) => file.path);
   for (const required of [
     "LICENSE",
@@ -165,26 +167,31 @@ try {
     consul.destroy();
   `,
   );
-  const tsdRequire = createRequire(import.meta.resolve("tsd"));
-  const typescript = tsdRequire("@tsd/typescript");
-  const program = typescript.createProgram([probe, commonjsProbe], {
-    strict: true,
-    noEmit: true,
-    module: typescript.ModuleKind.NodeNext,
-    moduleResolution: typescript.ModuleResolutionKind.NodeNext,
-    target: typescript.ScriptTarget.ES2022,
-    typeRoots: [join(root, "node_modules/@types")],
-  });
-  const diagnostics = typescript.getPreEmitDiagnostics(program);
-  if (diagnostics.length) {
-    throw new Error(
-      typescript.formatDiagnosticsWithColorAndContext(diagnostics, {
-        getCurrentDirectory: () => dirname(probe),
-        getCanonicalFileName: (filename) => resolve(filename),
-        getNewLine: () => "\n",
-      }),
-    );
-  }
+  const compilerPackage = fileURLToPath(
+    import.meta.resolve("typescript/package.json"),
+  );
+  const compilerManifest = JSON.parse(await readFile(compilerPackage, "utf8"));
+  await execute(
+    process.execPath,
+    [
+      join(dirname(compilerPackage), compilerManifest.bin.tsc),
+      "--strict",
+      "--noEmit",
+      "--module",
+      "NodeNext",
+      "--moduleResolution",
+      "NodeNext",
+      "--target",
+      "ES2022",
+      "--typeRoots",
+      join(root, "node_modules/@types"),
+      "--types",
+      "node",
+      probe,
+      commonjsProbe,
+    ],
+    { ...options, cwd: consumer },
+  );
   console.log(
     "Package archive: " +
       files.length +

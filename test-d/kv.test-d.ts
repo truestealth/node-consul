@@ -1,32 +1,40 @@
 import { EventEmitter } from "node:events";
 import { IncomingMessage } from "node:http";
-import { expectType, expectError } from "tsd";
+import { expectTypeOf } from "expect-type";
 import Consul from "../lib/index.js";
 import { GetItem, GetOptions } from "../lib/kv.js";
 
 const consul = new Consul();
 
-expectType<Promise<GetItem | undefined>>(consul.kv.get("key"));
-expectType<Promise<GetItem | undefined>>(consul.kv.get());
-expectType<Promise<GetItem | undefined>>(consul.kv.get({ recurse: false }));
-expectType<Promise<GetItem[] | undefined>>(consul.kv.get({ recurse: true }));
-expectType<Promise<Buffer | undefined>>(consul.kv.get({ raw: true }));
-expectType<Promise<Buffer | undefined>>(
+expectTypeOf(consul.kv.get("key")).toEqualTypeOf<
+  Promise<GetItem | undefined>
+>();
+expectTypeOf(consul.kv.get()).toEqualTypeOf<Promise<GetItem | undefined>>();
+expectTypeOf(consul.kv.get({ recurse: false })).toEqualTypeOf<
+  Promise<GetItem | undefined>
+>();
+expectTypeOf(consul.kv.get({ recurse: true })).toEqualTypeOf<
+  Promise<GetItem[] | undefined>
+>();
+expectTypeOf(consul.kv.get({ raw: true })).toEqualTypeOf<
+  Promise<Buffer | undefined>
+>();
+expectTypeOf(
   consul.kv.get({ raw: true, recurse: true, buffer: false }),
-);
-expectType<Promise<GetItem<Buffer> | undefined>>(
-  consul.kv.get({ key: "key", buffer: true }),
-);
-expectType<Promise<GetItem<Buffer>[] | undefined>>(
-  consul.kv.get({ recurse: true, buffer: true }),
-);
+).toEqualTypeOf<Promise<Buffer | undefined>>();
+expectTypeOf(consul.kv.get({ key: "key", buffer: true })).toEqualTypeOf<
+  Promise<GetItem<Buffer> | undefined>
+>();
+expectTypeOf(consul.kv.get({ recurse: true, buffer: true })).toEqualTypeOf<
+  Promise<GetItem<Buffer>[] | undefined>
+>();
 
 const recurse: boolean = Math.random() > 0.5;
-expectType<Promise<GetItem | GetItem[] | undefined>>(
-  consul.kv.get({ recurse }),
-);
+expectTypeOf(consul.kv.get({ recurse })).toEqualTypeOf<
+  Promise<GetItem | GetItem[] | undefined>
+>();
 const options: GetOptions = { key: "key" };
-expectType<
+expectTypeOf(consul.kv.get(options)).toEqualTypeOf<
   Promise<
     | GetItem<string | Buffer>
     | GetItem<string | Buffer>[]
@@ -37,35 +45,40 @@ expectType<
         (GetItem<string | Buffer> | GetItem<string | Buffer>[] | Buffer)?,
       ]
   >
->(consul.kv.get(options));
+>();
 
 const ctx = Object.assign(new EventEmitter(), {
   includeResponse: true as const,
 });
-expectType<Promise<[IncomingMessage, Buffer?]>>(
-  consul.kv.get({ raw: true, ctx }),
-);
-expectType<Promise<[IncomingMessage, GetItem[]?]>>(
-  consul.kv.get({ recurse: true, ctx }),
-);
-expectType<Promise<[IncomingMessage, string[]]>>(consul.kv.keys({ ctx }));
-expectType<Promise<[IncomingMessage, boolean]>>(
-  consul.kv.set({ key: "key", value: "value", ctx }),
-);
-expectType<Promise<[IncomingMessage, boolean]>>(
-  consul.kv.set("key", "value", { ctx }),
-);
-expectType<Promise<[IncomingMessage, boolean]>>(
-  consul.kv.del({ key: "key", ctx }),
-);
+expectTypeOf(consul.kv.get({ raw: true, ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, Buffer?]>
+>();
+expectTypeOf(consul.kv.get({ recurse: true, ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, GetItem[]?]>
+>();
+expectTypeOf(consul.kv.keys({ ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, string[]]>
+>();
+expectTypeOf(consul.kv.set({ key: "key", value: "value", ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, boolean]>
+>();
+expectTypeOf(consul.kv.set("key", "value", { ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, boolean]>
+>();
+expectTypeOf(consul.kv.del({ key: "key", ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, boolean]>
+>();
 
-expectType<Promise<boolean>>(
+expectTypeOf(
   consul.kv.set("key", null, { cas: 1, timeout: "1s", partition: "default" }),
-);
-expectType<Promise<boolean>>(consul.kv.delete("key"));
-expectType<Promise<string[]>>(
-  consul.kv.keys({ timeout: 1000, token: "token" }),
-);
-expectError(consul.kv.get({ raw: "true" }));
-expectError(consul.kv.set({ key: "key" }));
-expectError(consul.kv.set("key", "value", { timeout: false }));
+).toEqualTypeOf<Promise<boolean>>();
+expectTypeOf(consul.kv.delete("key")).toEqualTypeOf<Promise<boolean>>();
+expectTypeOf(consul.kv.keys({ timeout: 1000, token: "token" })).toEqualTypeOf<
+  Promise<string[]>
+>();
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.kv.get({ raw: "true" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.kv.set({ key: "key" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.kv.set("key", "value", { timeout: false });

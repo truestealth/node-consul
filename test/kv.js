@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 
 import * as helper from "./helper.js";
@@ -11,7 +11,7 @@ describe("Kv", function () {
       this.nock.get("/v1/kv/key1").reply(200, [{ ok: true }]);
 
       const data = await this.consul.kv.get({ key: "key1" });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should return raw", async function () {
@@ -21,14 +21,14 @@ describe("Kv", function () {
         key: "key1",
         raw: true,
       });
-      should(data).eql(Buffer.from("value1"));
+      assert.deepEqual(data, Buffer.from("value1"));
     });
 
     it("should return handle not found", async function () {
       this.nock.get("/v1/kv/key1").reply(404, "value1");
 
       const data = await this.consul.kv.get("key1");
-      should(data).be.undefined();
+      assert.equal(data, undefined);
     });
 
     it("should decode values", async function () {
@@ -37,7 +37,7 @@ describe("Kv", function () {
         .reply(200, [{ Value: "dmFsdWUx" }, { ok: true }]);
 
       const data = await this.consul.kv.get({ recurse: true });
-      should(data).eql([{ Value: "value1" }, { ok: true }]);
+      assert.deepEqual(data, [{ Value: "value1" }, { ok: true }]);
     });
 
     it("should decode buffers and preserve null values", async function () {
@@ -46,7 +46,10 @@ describe("Kv", function () {
         .reply(200, [{ Value: "dmFsdWUx" }, { Value: null }]);
 
       const data = await this.consul.kv.get({ recurse: true, buffer: true });
-      should(data).eql([{ Value: Buffer.from("value1") }, { Value: null }]);
+      assert.deepEqual(data, [
+        { Value: Buffer.from("value1") },
+        { Value: null },
+      ]);
       scope.done();
     });
 
@@ -54,7 +57,7 @@ describe("Kv", function () {
       this.nock.get("/v1/kv/key1").reply(200, [{ Value: "dmFsdWUx" }]);
 
       const data = await this.consul.kv.get({ key: "key1", recurse: false });
-      should(data).eql({ Value: "value1" });
+      assert.deepEqual(data, { Value: "value1" });
     });
 
     it("should include response for raw and missing keys", async function () {
@@ -68,22 +71,22 @@ describe("Kv", function () {
         raw: true,
         ctx,
       });
-      should(res.statusCode).equal(200);
-      should(data).eql(Buffer.from("value1"));
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(data, Buffer.from("value1"));
       const [missingRes, missingData] = await this.consul.kv.get({
         key: "missing",
         ctx,
       });
-      should(missingRes.statusCode).equal(404);
-      should(missingData).be.undefined();
-      should(ctx.listenerCount("cancel")).equal(0);
+      assert.equal(missingRes.statusCode, 404);
+      assert.equal(missingData, undefined);
+      assert.equal(ctx.listenerCount("cancel"), 0);
     });
 
     it("should empty response", async function () {
       this.nock.get("/v1/kv/?recurse=true").reply(200, []);
 
       const data = await this.consul.kv.get({ recurse: true });
-      should.not.exist(data);
+      assert.ok(data == null);
     });
 
     it("should handle errors", async function () {
@@ -91,12 +94,9 @@ describe("Kv", function () {
 
       try {
         await this.consul.kv.get("key1");
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: kv.get: internal server error",
-        );
+        assert.deepEqual(err.message, "consul: kv.get: internal server error");
       }
     });
 
@@ -118,7 +118,7 @@ describe("Kv", function () {
         wait: "5s",
         consistent: true,
       });
-      should(result.Value).equal("value1");
+      assert.equal(result.Value, "value1");
       scope.done();
     });
 
@@ -129,10 +129,10 @@ describe("Kv", function () {
 
       try {
         await client.kv.get({ key: "key1", timeout: "10ms", ctx });
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err.isTimeout).equal(true);
-        should(ctx.listenerCount("cancel")).equal(0);
+        assert.equal(err.isTimeout, true);
+        assert.equal(ctx.listenerCount("cancel"), 0);
       } finally {
         client.destroy();
       }
@@ -147,10 +147,10 @@ describe("Kv", function () {
 
       try {
         await pending;
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err.isAbort).equal(true);
-        should(ctx.listenerCount("cancel")).equal(0);
+        assert.equal(err.isAbort, true);
+        assert.equal(ctx.listenerCount("cancel"), 0);
       } finally {
         client.destroy();
       }
@@ -165,10 +165,10 @@ describe("Kv", function () {
 
       try {
         await client.kv.get({ key: "key1", ctx });
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err.code).equal("ECONNRESET");
-        should(ctx.listenerCount("cancel")).equal(0);
+        assert.equal(err.code, "ECONNRESET");
+        assert.equal(ctx.listenerCount("cancel"), 0);
       } finally {
         client.destroy();
       }
@@ -180,21 +180,21 @@ describe("Kv", function () {
       this.nock.get("/v1/kv/key1?keys=true&separator=%3A").reply(200, ["test"]);
 
       const data = await this.consul.kv.keys({ key: "key1", separator: ":" });
-      should(data).eql(["test"]);
+      assert.deepEqual(data, ["test"]);
     });
 
     it("should work string argument", async function () {
       this.nock.get("/v1/kv/key1?keys=true").reply(200, ["test"]);
 
       const data = await this.consul.kv.keys("key1");
-      should(data).eql(["test"]);
+      assert.deepEqual(data, ["test"]);
     });
 
     it("should work with no arguments", async function () {
       this.nock.get("/v1/kv/?keys=true").reply(200, ["test"]);
 
       const data = await this.consul.kv.keys();
-      should(data).eql(["test"]);
+      assert.deepEqual(data, ["test"]);
     });
   });
 
@@ -209,7 +209,7 @@ describe("Kv", function () {
         value: "value1",
         cas: 1,
       });
-      should(result).equal(false);
+      assert.equal(result, false);
       scope.done();
     });
 
@@ -217,8 +217,8 @@ describe("Kv", function () {
       const opts = Object.freeze({ cas: 1 });
       this.nock.put("/v1/kv/key1?cas=1", "value1").reply(200, true);
 
-      should(await this.consul.kv.set("key1", "value1", opts)).equal(true);
-      should(opts).eql({ cas: 1 });
+      assert.equal(await this.consul.kv.set("key1", "value1", opts), true);
+      assert.deepEqual(opts, { cas: 1 });
     });
 
     it("should work", async function () {
@@ -233,7 +233,7 @@ describe("Kv", function () {
         flags: 2,
         acquire: "session",
       });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with 4 arguments", async function () {
@@ -241,31 +241,31 @@ describe("Kv", function () {
 
       const opts = { release: "session" };
       const data = await this.consul.kv.set("key1", null, opts);
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with 3 arguments", async function () {
       this.nock.put("/v1/kv/key1", "value1").reply(200, { ok: true });
 
       const data = await this.consul.kv.set("key1", "value1");
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require key", async function () {
       try {
         await this.consul.kv.set({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property("message", "consul: kv.set: key required");
+        assert.deepEqual(err.message, "consul: kv.set: key required");
       }
     });
 
     it("should require value", async function () {
       try {
         await this.consul.kv.set({ key: "key1" });
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property("message", "consul: kv.set: value required");
+        assert.deepEqual(err.message, "consul: kv.set: value required");
       }
     });
   });
@@ -274,21 +274,21 @@ describe("Kv", function () {
     it("should preserve a failed CAS result", async function () {
       this.nock.delete("/v1/kv/key1?cas=1").reply(200, false);
 
-      should(await this.consul.kv.del({ key: "key1", cas: 1 })).equal(false);
+      assert.equal(await this.consul.kv.del({ key: "key1", cas: 1 }), false);
     });
 
     it("should work", async function () {
       this.nock.delete("/v1/kv/key1?cas=1").reply(200, true);
 
       const result = await this.consul.kv.del({ key: "key1", cas: 1 });
-      should(result).equal(true);
+      assert.equal(result, true);
     });
 
     it("should work using delete alias", async function () {
       this.nock.delete("/v1/kv/key1?cas=1").reply(200, true);
 
       const result = await this.consul.kv.delete({ key: "key1", cas: 1 });
-      should(result).equal(true);
+      assert.equal(result, true);
     });
 
     it("should work with string", async function () {

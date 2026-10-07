@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import type { IncomingMessage } from "node:http";
-import { expectError, expectType } from "tsd";
+import { expectTypeOf } from "expect-type";
 import Consul from "../lib/index.js";
 import type { CommonOptions } from "../lib/consul.js";
 import type {
@@ -50,44 +50,48 @@ const tokenEntry: AclTokenEntry = {
   Partition: "part1",
 };
 
-expectType<Promise<AclTokenResult>>(
+expectTypeOf(
   consul.acl.token.create({ entry: tokenEntry, ...common }),
-);
-expectType<Promise<AclTokenResult>>(consul.acl.token.create({ entry: {} }));
-expectType<Promise<[IncomingMessage, AclTokenResult]>>(
+).toEqualTypeOf<Promise<AclTokenResult>>();
+expectTypeOf(consul.acl.token.create({ entry: {} })).toEqualTypeOf<
+  Promise<AclTokenResult>
+>();
+expectTypeOf(
   consul.acl.token.create({ entry: tokenEntry, ...common, ctx }),
-);
-expectType<Promise<AclTokenResult>>(
+).toEqualTypeOf<Promise<[IncomingMessage, AclTokenResult]>>();
+expectTypeOf(
   consul.acl.token.update({
     id: "accessor-id",
     entry: { Policies: [] },
     ...common,
   }),
-);
-expectType<Promise<AclTokenResult | undefined>>(
-  consul.acl.token.get("accessor-id"),
-);
-expectType<Promise<[IncomingMessage, AclTokenResult?]>>(
+).toEqualTypeOf<Promise<AclTokenResult>>();
+expectTypeOf(consul.acl.token.get("accessor-id")).toEqualTypeOf<
+  Promise<AclTokenResult | undefined>
+>();
+expectTypeOf(
   consul.acl.token.get({ id: "accessor-id", ...common, ctx }),
-);
-expectType<Promise<AclTokenExpandedResult | undefined>>(
+).toEqualTypeOf<Promise<[IncomingMessage, AclTokenResult?]>>();
+expectTypeOf(
   consul.acl.token.get({ id: "accessor-id", expanded: true, ...common }),
-);
-expectType<Promise<[IncomingMessage, AclTokenExpandedResult?]>>(
+).toEqualTypeOf<Promise<AclTokenExpandedResult | undefined>>();
+expectTypeOf(
   consul.acl.token.get({ id: "accessor-id", expanded: true, ...common, ctx }),
-);
-expectType<Promise<AclTokenResult | undefined>>(
+).toEqualTypeOf<Promise<[IncomingMessage, AclTokenExpandedResult?]>>();
+expectTypeOf(
   consul.acl.token.get({ id: "accessor-id", expanded: false }),
-);
+).toEqualTypeOf<Promise<AclTokenResult | undefined>>();
 const expanded: boolean = Math.random() > 0.5;
-expectType<Promise<AclTokenResult | AclTokenExpandedResult | undefined>>(
+expectTypeOf(
   consul.acl.token.get({ id: "accessor-id", expanded }),
-);
-expectType<Promise<AclTokenResult | undefined>>(consul.acl.token.self());
-expectType<Promise<[IncomingMessage, AclTokenResult?]>>(
-  consul.acl.token.self({ ...common, ctx }),
-);
-expectType<Promise<AclTokenListResult[]>>(
+).toEqualTypeOf<Promise<AclTokenResult | AclTokenExpandedResult | undefined>>();
+expectTypeOf(consul.acl.token.self()).toEqualTypeOf<
+  Promise<AclTokenResult | undefined>
+>();
+expectTypeOf(consul.acl.token.self({ ...common, ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, AclTokenResult?]>
+>();
+expectTypeOf(
   consul.acl.token.list({
     policy: "policy-id",
     role: "role-id",
@@ -96,25 +100,29 @@ expectType<Promise<AclTokenListResult[]>>(
     authMethodNamespace: "auth-team",
     ...common,
   }),
-);
-expectType<Promise<[IncomingMessage, AclTokenListResult[]]>>(
-  consul.acl.token.list({ ...common, ctx }),
-);
-expectType<Promise<AclTokenResult>>(consul.acl.token.clone("accessor-id"));
-expectType<Promise<[IncomingMessage, AclTokenResult]>>(
+).toEqualTypeOf<Promise<AclTokenListResult[]>>();
+expectTypeOf(consul.acl.token.list({ ...common, ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, AclTokenListResult[]]>
+>();
+expectTypeOf(consul.acl.token.clone("accessor-id")).toEqualTypeOf<
+  Promise<AclTokenResult>
+>();
+expectTypeOf(
   consul.acl.token.clone({
     id: "accessor-id",
     description: "",
     ...common,
     ctx,
   }),
-);
-expectType<Promise<boolean>>(consul.acl.token.del("accessor-id"));
-expectType<Promise<[IncomingMessage, boolean]>>(
+).toEqualTypeOf<Promise<[IncomingMessage, AclTokenResult]>>();
+expectTypeOf(consul.acl.token.del("accessor-id")).toEqualTypeOf<
+  Promise<boolean>
+>();
+expectTypeOf(
   consul.acl.token.del({ id: "accessor-id", ...common, ctx }),
-);
+).toEqualTypeOf<Promise<[IncomingMessage, boolean]>>();
 
-expectType<Promise<AclPolicyResult>>(
+expectTypeOf(
   consul.acl.policy.create({
     entry: {
       Name: "consul-smoke-policy",
@@ -122,49 +130,55 @@ expectType<Promise<AclPolicyResult>>(
     },
     ...common,
   }),
-);
-expectType<Promise<[IncomingMessage, AclPolicyResult]>>(
+).toEqualTypeOf<Promise<AclPolicyResult>>();
+expectTypeOf(
   consul.acl.policy.update({
     id: "policy-id",
     entry: { Name: "consul-smoke-policy", Rules: "" },
     ctx,
   }),
-);
-expectType<Promise<AclPolicyResult | undefined>>(
-  consul.acl.policy.get("policy-id"),
-);
-expectType<Promise<AclPolicyResult | undefined>>(
+).toEqualTypeOf<Promise<[IncomingMessage, AclPolicyResult]>>();
+expectTypeOf(consul.acl.policy.get("policy-id")).toEqualTypeOf<
+  Promise<AclPolicyResult | undefined>
+>();
+expectTypeOf(
   consul.acl.policy.get({ name: "consul-smoke-policy", ...common }),
-);
-expectType<Promise<[IncomingMessage, AclPolicyResult?]>>(
+).toEqualTypeOf<Promise<AclPolicyResult | undefined>>();
+expectTypeOf(
   consul.acl.policy.get({ id: "policy-id", ...common, ctx }),
-);
-expectType<Promise<AclPolicyListResult[]>>(consul.acl.policy.list());
-expectType<Promise<[IncomingMessage, AclPolicyListResult[]]>>(
-  consul.acl.policy.list({ ...common, ctx }),
-);
-expectType<Promise<boolean>>(consul.acl.policy.del("policy-id"));
+).toEqualTypeOf<Promise<[IncomingMessage, AclPolicyResult?]>>();
+expectTypeOf(consul.acl.policy.list()).toEqualTypeOf<
+  Promise<AclPolicyListResult[]>
+>();
+expectTypeOf(consul.acl.policy.list({ ...common, ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, AclPolicyListResult[]]>
+>();
+expectTypeOf(consul.acl.policy.del("policy-id")).toEqualTypeOf<
+  Promise<boolean>
+>();
 
-expectType<Promise<AclRoleResult>>(
+expectTypeOf(
   consul.acl.role.create({
     entry: { Name: "consul-smoke-role", Policies: [{ ID: "policy-id" }] },
   }),
-);
-expectType<Promise<[IncomingMessage, AclRoleResult]>>(
+).toEqualTypeOf<Promise<AclRoleResult>>();
+expectTypeOf(
   consul.acl.role.update({
     id: "role-id",
     entry: { Name: "consul-smoke-role", Policies: null },
     ctx,
   }),
-);
-expectType<Promise<AclRoleResult | undefined>>(consul.acl.role.get("role-id"));
-expectType<Promise<[IncomingMessage, AclRoleResult?]>>(
+).toEqualTypeOf<Promise<[IncomingMessage, AclRoleResult]>>();
+expectTypeOf(consul.acl.role.get("role-id")).toEqualTypeOf<
+  Promise<AclRoleResult | undefined>
+>();
+expectTypeOf(
   consul.acl.role.get({ name: "consul-smoke-role", ...common, ctx }),
-);
-expectType<Promise<AclRoleResult[]>>(
-  consul.acl.role.list({ policy: "policy-id" }),
-);
-expectType<Promise<boolean>>(consul.acl.role.del("role-id"));
+).toEqualTypeOf<Promise<[IncomingMessage, AclRoleResult?]>>();
+expectTypeOf(consul.acl.role.list({ policy: "policy-id" })).toEqualTypeOf<
+  Promise<AclRoleResult[]>
+>();
+expectTypeOf(consul.acl.role.del("role-id")).toEqualTypeOf<Promise<boolean>>();
 
 const authEntry: AclAuthMethodEntry = {
   Name: "consul-smoke-jwt",
@@ -181,26 +195,30 @@ const authEntry: AclAuthMethodEntry = {
     { Selector: 'value.subject == "consul-smoke"', BindNamespace: "team" },
   ],
 };
-expectType<Promise<AclAuthMethodResult>>(
+expectTypeOf(
   consul.acl.authMethod.create({ entry: authEntry, ...common }),
-);
-expectType<Promise<[IncomingMessage, AclAuthMethodResult]>>(
+).toEqualTypeOf<Promise<AclAuthMethodResult>>();
+expectTypeOf(
   consul.acl.authMethod.update({
     name: "consul-smoke-jwt",
     entry: { Config: authEntry.Config },
     ctx,
   }),
-);
-expectType<Promise<AclAuthMethodResult | undefined>>(
-  consul.acl.authMethod.get("consul-smoke-jwt"),
-);
-expectType<Promise<[IncomingMessage, AclAuthMethodResult?]>>(
+).toEqualTypeOf<Promise<[IncomingMessage, AclAuthMethodResult]>>();
+expectTypeOf(consul.acl.authMethod.get("consul-smoke-jwt")).toEqualTypeOf<
+  Promise<AclAuthMethodResult | undefined>
+>();
+expectTypeOf(
   consul.acl.authMethod.get({ name: "consul-smoke-jwt", ...common, ctx }),
-);
-expectType<Promise<AclAuthMethodListResult[]>>(consul.acl.authMethod.list());
-expectType<Promise<boolean>>(consul.acl.authMethod.del("consul-smoke-jwt"));
+).toEqualTypeOf<Promise<[IncomingMessage, AclAuthMethodResult?]>>();
+expectTypeOf(consul.acl.authMethod.list()).toEqualTypeOf<
+  Promise<AclAuthMethodListResult[]>
+>();
+expectTypeOf(consul.acl.authMethod.del("consul-smoke-jwt")).toEqualTypeOf<
+  Promise<boolean>
+>();
 
-expectType<Promise<AclBindingRuleResult>>(
+expectTypeOf(
   consul.acl.bindingRule.create({
     entry: {
       AuthMethod: "consul-smoke-jwt",
@@ -209,8 +227,8 @@ expectType<Promise<AclBindingRuleResult>>(
     },
     ...common,
   }),
-);
-expectType<Promise<AclBindingRuleResult>>(
+).toEqualTypeOf<Promise<AclBindingRuleResult>>();
+expectTypeOf(
   consul.acl.bindingRule.create({
     entry: {
       AuthMethod: "consul-smoke-jwt",
@@ -219,95 +237,96 @@ expectType<Promise<AclBindingRuleResult>>(
       BindVars: { Name: "consul-smoke-${value.subject}" },
     },
   }),
-);
-expectType<Promise<[IncomingMessage, AclBindingRuleResult]>>(
+).toEqualTypeOf<Promise<AclBindingRuleResult>>();
+expectTypeOf(
   consul.acl.bindingRule.update({
     id: "rule-id",
     entry: { BindType: "service", BindName: "consul-smoke" },
     ctx,
   }),
-);
-expectType<Promise<AclBindingRuleResult | undefined>>(
-  consul.acl.bindingRule.get("rule-id"),
-);
-expectType<Promise<[IncomingMessage, AclBindingRuleResult?]>>(
+).toEqualTypeOf<Promise<[IncomingMessage, AclBindingRuleResult]>>();
+expectTypeOf(consul.acl.bindingRule.get("rule-id")).toEqualTypeOf<
+  Promise<AclBindingRuleResult | undefined>
+>();
+expectTypeOf(
   consul.acl.bindingRule.get({ id: "rule-id", ...common, ctx }),
-);
-expectType<Promise<AclBindingRuleResult[]>>(
+).toEqualTypeOf<Promise<[IncomingMessage, AclBindingRuleResult?]>>();
+expectTypeOf(
   consul.acl.bindingRule.list({ authMethod: "consul-smoke-jwt", ...common }),
-);
-expectType<Promise<boolean>>(consul.acl.bindingRule.del("rule-id"));
+).toEqualTypeOf<Promise<AclBindingRuleResult[]>>();
+expectTypeOf(consul.acl.bindingRule.del("rule-id")).toEqualTypeOf<
+  Promise<boolean>
+>();
 
-expectType<Promise<AclTokenResult>>(
+expectTypeOf(
   consul.acl.login({
     authMethod: "consul-smoke-jwt",
     bearerToken: "consul-smoke-bearer",
     meta: { source: "smoke" },
     ...common,
   }),
-);
-expectType<Promise<[IncomingMessage, AclTokenResult]>>(
+).toEqualTypeOf<Promise<AclTokenResult>>();
+expectTypeOf(
   consul.acl.login({
     authMethod: "consul-smoke-jwt",
     bearerToken: "consul-smoke-bearer",
     ctx,
   }),
-);
-expectType<Promise<boolean>>(consul.acl.logout());
-expectType<Promise<[IncomingMessage, boolean]>>(
-  consul.acl.logout({ ...common, ctx }),
-);
+).toEqualTypeOf<Promise<[IncomingMessage, AclTokenResult]>>();
+expectTypeOf(consul.acl.logout()).toEqualTypeOf<Promise<boolean>>();
+expectTypeOf(consul.acl.logout({ ...common, ctx })).toEqualTypeOf<
+  Promise<[IncomingMessage, boolean]>
+>();
 const ambiguous: CommonOptions = { ctx: new EventEmitter() };
-expectType<Promise<boolean | [IncomingMessage, boolean]>>(
-  consul.acl.logout(ambiguous),
-);
+expectTypeOf(consul.acl.logout(ambiguous)).toEqualTypeOf<
+  Promise<boolean | [IncomingMessage, boolean]>
+>();
 
-expectError(consul.acl.token.create({}));
-expectError(consul.acl.token.update({ entry: {} }));
-expectError(
-  consul.acl.token.update({
-    id: "accessor-id",
-    entry: { ExpirationTTL: "1h" },
-  }),
-);
-expectError(consul.acl.token.get({ id: "accessor-id", expanded: "true" }));
-expectError(consul.acl.token.self({ expanded: true }));
-expectError(consul.acl.token.del({ name: "consul-smoke" }));
-expectError(consul.acl.policy.create({ entry: { Rules: "" } }));
-expectError(consul.acl.policy.get({}));
-expectError(consul.acl.policy.get({ id: "policy-id", name: "consul-smoke" }));
-expectError(consul.acl.role.create({ entry: {} }));
-expectError(consul.acl.role.get({ id: "role-id", name: "consul-smoke" }));
-expectError(
-  consul.acl.authMethod.create({
-    entry: { Name: "consul-smoke", Type: "jwt" },
-  }),
-);
-expectError(consul.acl.authMethod.get({ id: "consul-smoke" }));
-expectError(consul.acl.authMethod.update({ name: "consul-smoke", entry: {} }));
-expectError(
-  consul.acl.bindingRule.create({
-    entry: { BindType: "role", BindName: "consul-smoke" },
-  }),
-);
-expectError(
-  consul.acl.bindingRule.create({
-    entry: {
-      AuthMethod: "consul-smoke",
-      BindType: "invalid",
-      BindName: "consul-smoke",
-    },
-  }),
-);
-expectError(consul.acl.login({ authMethod: "consul-smoke" }));
-expectError(
-  consul.acl.login({
-    authMethod: "consul-smoke",
-    bearerToken: "consul-smoke",
-    meta: { count: 1 },
-  }),
-);
-expectError<AclLink>({});
-expectError((await consul.acl.policy.list())[0].Rules);
-expectError((await consul.acl.authMethod.list())[0].Config);
-expectType<string | undefined>((await consul.acl.token.list())[0].SecretID);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.token.create({});
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.token.update({ entry: {} });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.token.update({ id: "accessor-id", entry: { ExpirationTTL: "1h" } });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.token.get({ id: "accessor-id", expanded: "true" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.token.self({ expanded: true });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.token.del({ name: "consul-smoke" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.policy.create({ entry: { Rules: "" } });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.policy.get({});
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.policy.get({ id: "policy-id", name: "consul-smoke" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.role.create({ entry: {} });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.role.get({ id: "role-id", name: "consul-smoke" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.authMethod.create({ entry: { Name: "consul-smoke", Type: "jwt" } });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.authMethod.get({ id: "consul-smoke" });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.authMethod.update({ name: "consul-smoke", entry: {} });
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.bindingRule.create({ entry: { BindType: "role", BindName: "consul-smoke" }, });
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.bindingRule.create({ entry: { AuthMethod: "consul-smoke", BindType: "invalid", BindName: "consul-smoke", }, });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.login({ authMethod: "consul-smoke" });
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.acl.login({ authMethod: "consul-smoke", bearerToken: "consul-smoke", meta: { count: 1 }, });
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+const rejected3: AclLink = {};
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+(await consul.acl.policy.list())[0].Rules;
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+(await consul.acl.authMethod.list())[0].Config;
+expectTypeOf((await consul.acl.token.list())[0].SecretID).toEqualTypeOf<
+  string | undefined
+>();

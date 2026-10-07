@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -12,14 +12,14 @@ describe("Query", function () {
         .reply(200, { ok: true }, { "x-consul-token": "token1" });
 
       const data = await this.consul.query.list({ token: "token1" });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with no options", async function () {
       this.nock.get("/v1/query").reply(200, { ok: true });
 
       const data = await this.consul.query.list();
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
   });
 
@@ -72,7 +72,7 @@ describe("Query", function () {
           ttl: "9s",
         },
       });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with just service", async function () {
@@ -85,18 +85,15 @@ describe("Query", function () {
         .reply(200, { ok: true });
 
       const data = await this.consul.query.create("service1");
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require service", async function () {
       try {
         await this.consul.query.create({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: query.create: service required",
-        );
+        assert.deepEqual(err.message, "consul: query.create: service required");
       }
     });
   });
@@ -106,18 +103,15 @@ describe("Query", function () {
       this.nock.get("/v1/query/query1").reply(200, [{ ok: true }]);
 
       const data = await this.consul.query.get("query1");
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require query", async function () {
       try {
         await this.consul.query.get({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: query.get: query required",
-        );
+        assert.deepEqual(err.message, "consul: query.get: query required");
       }
     });
   });
@@ -177,24 +171,18 @@ describe("Query", function () {
     it("should require query", async function () {
       try {
         await this.consul.query.update();
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: query.update: query required",
-        );
+        assert.deepEqual(err.message, "consul: query.update: query required");
       }
     });
 
     it("should require service", async function () {
       try {
         await this.consul.query.update({ query: "query1", service: {} });
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: query.update: service required",
-        );
+        assert.deepEqual(err.message, "consul: query.update: service required");
       }
     });
   });
@@ -209,12 +197,9 @@ describe("Query", function () {
     it("should require query", async function () {
       try {
         await this.consul.query.destroy({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: query.destroy: query required",
-        );
+        assert.deepEqual(err.message, "consul: query.destroy: query required");
       }
     });
   });
@@ -229,12 +214,9 @@ describe("Query", function () {
     it("should require query", async function () {
       try {
         await this.consul.query.execute({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: query.execute: query required",
-        );
+        assert.deepEqual(err.message, "consul: query.execute: query required");
       }
     });
   });
@@ -249,12 +231,9 @@ describe("Query", function () {
     it("should require query", async function () {
       try {
         await this.consul.query.explain({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: query.explain: query required",
-        );
+        assert.deepEqual(err.message, "consul: query.explain: query required");
       }
     });
   });
@@ -285,7 +264,7 @@ describe("Query", function () {
 
       this.consul.query._params(req, opts);
 
-      should(req).eql({
+      assert.deepEqual(req, {
         body: {
           Name: "name1",
           Session: "session1",
@@ -319,7 +298,7 @@ describe("Query", function () {
 
       this.consul.query._params(req, opts);
 
-      should(req).eql({
+      assert.deepEqual(req, {
         body: {
           Template: { Type: "type1" },
           Service: {
@@ -340,7 +319,7 @@ describe("Query", function () {
 
       this.consul.query._params(req, opts);
 
-      should(req).eql({
+      assert.deepEqual(req, {
         body: {
           Service: {},
         },
@@ -353,7 +332,7 @@ describe("Query", function () {
 
       this.consul.query._params(req, opts);
 
-      should(req).eql({
+      assert.deepEqual(req, {
         body: {
           Token: "token1",
           Service: {

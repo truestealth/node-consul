@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -10,25 +10,22 @@ describe("Health", function () {
       this.nock.get("/v1/health/node/node1").reply(200, { ok: true });
 
       const data = await this.consul.health.node({ node: "node1" });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with one argument", async function () {
       this.nock.get("/v1/health/node/node1").reply(200, { ok: true });
 
       const data = await this.consul.health.node("node1");
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require node", async function () {
       try {
         await this.consul.health.node({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: health.node: node required",
-        );
+        assert.deepEqual(err.message, "consul: health.node: node required");
       }
     });
   });
@@ -38,23 +35,23 @@ describe("Health", function () {
       this.nock.get("/v1/health/checks/service1").reply(200, { ok: true });
 
       const data = await this.consul.health.checks({ service: "service1" });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with one argument", async function () {
       this.nock.get("/v1/health/checks/service1").reply(200, { ok: true });
 
       const data = await this.consul.health.checks("service1");
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require service", async function () {
       try {
         await this.consul.health.checks({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
+        assert.deepEqual(
+          err.message,
           "consul: health.checks: service required",
         );
       }
@@ -72,23 +69,23 @@ describe("Health", function () {
         tag: "tag1",
         passing: "true",
       });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with one argument", async function () {
       this.nock.get("/v1/health/service/service1").reply(200, { ok: true });
 
       const data = await this.consul.health.service("service1");
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require service", async function () {
       try {
         await this.consul.health.service({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
+        assert.deepEqual(
+          err.message,
           "consul: health.service: service required",
         );
       }
@@ -100,35 +97,32 @@ describe("Health", function () {
       this.nock.get("/v1/health/state/any").reply(200, { ok: true });
 
       const data = await this.consul.health.state({ state: "any" });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should work with one argument", async function () {
       this.nock.get("/v1/health/state/warning").reply(200, { ok: true });
 
       const data = await this.consul.health.state("warning");
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require state", async function () {
       try {
         await this.consul.health.state({});
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
-          "consul: health.state: state required",
-        );
+        assert.deepEqual(err.message, "consul: health.state: state required");
       }
     });
 
     it("should require valid state", async function () {
       try {
         await this.consul.health.state("foo");
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
+        assert.deepEqual(
+          err.message,
           "consul: health.state: state invalid: foo",
         );
       }

@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { performance } from "node:perf_hooks";
-import should from "should";
 
 import * as helper from "./helper.js";
 
@@ -41,8 +40,8 @@ describe("Watch", function () {
       watch.end();
     };
 
-    should(watch.isRunning()).be.true();
-    should(watch.updateTime()).be.undefined();
+    assert.equal(watch.isRunning(), true);
+    assert.equal(watch.updateTime(), undefined);
 
     // make tests run fast
     watch._wait = () => {
@@ -67,13 +66,13 @@ describe("Watch", function () {
       called.cancel = true;
 
       try {
-        should(list).eql([1, 4, 5, 6, 7]);
+        assert.deepEqual(list, [1, 4, 5, 6, 7]);
 
         watch._run();
         watch._err();
 
         watch.end();
-        should(watch.isRunning()).be.false();
+        assert.equal(watch.isRunning(), false);
       } catch (err) {
         safeDone(err);
       }
@@ -87,16 +86,16 @@ describe("Watch", function () {
       try {
         switch (res.headers["x-consul-index"]) {
           case "5":
-            should(watch.isRunning()).be.true();
-            should(watch.updateTime()).be.a.Number();
-            should(errors).be.empty();
+            assert.equal(watch.isRunning(), true);
+            assert.equal(typeof watch.updateTime(), "number");
+            assert.equal(errors.length, 0);
             break;
           case "10":
-            should(watch.isRunning()).be.true();
-            should(watch.updateTime()).be.a.Number();
-            should(errors).have.length(1);
-            should(errors[0]).have.property(
-              "message",
+            assert.equal(watch.isRunning(), true);
+            assert.equal(typeof watch.updateTime(), "number");
+            assert.equal(errors.length, 1);
+            assert.deepEqual(
+              errors[0].message,
               "consul: kv.get: internal server error",
             );
             break;
@@ -112,15 +111,12 @@ describe("Watch", function () {
 
     watch.on("end", () => {
       try {
-        should(called).have.property("cancel", true);
-        should(called).have.property("change", true);
-        should(called).have.property("error", true);
+        assert.deepEqual(called.cancel, true);
+        assert.deepEqual(called.change, true);
+        assert.deepEqual(called.error, true);
 
-        should(errors).have.length(3);
-        should(errors[1]).have.property(
-          "message",
-          "Consul returned zero index value",
-        );
+        assert.equal(errors.length, 3);
+        assert.deepEqual(errors[1].message, "Consul returned zero index value");
 
         safeDone();
       } catch (err) {
@@ -154,10 +150,10 @@ describe("Watch", function () {
     });
 
     watch.on("end", () => {
-      should(called).eql({ cancel: true, error: true });
-      should(errors).have.length(1);
-      should(errors[0]).have.property("isValidation", true);
-      should(errors[0]).have.property("message", "Watch not supported");
+      assert.deepEqual(called, { cancel: true, error: true });
+      assert.equal(errors.length, 1);
+      assert.deepEqual(errors[0].isValidation, true);
+      assert.deepEqual(errors[0].message, "Watch not supported");
 
       done();
     });
@@ -177,8 +173,8 @@ describe("Watch", function () {
       maxAttempts: 2,
     });
 
-    should(watch.isRunning()).be.true;
-    should(watch.updateTime()).be.undefined;
+    assert.equal(watch.isRunning(), true);
+    assert.equal(watch.updateTime(), undefined);
 
     const errors = [];
 
@@ -187,16 +183,19 @@ describe("Watch", function () {
     });
 
     watch.on("end", () => {
-      should(errors).have.length(3);
+      assert.equal(errors.length, 3);
 
       done();
     });
   });
 
   it("should require method", function () {
-    should(() => {
-      this.consul.watch({});
-    }).throw("method required");
+    assert.throws(
+      () => {
+        this.consul.watch({});
+      },
+      { message: "method required" },
+    );
   });
 
   it("validates rate-limit and retry-jitter settings", function () {
@@ -340,12 +339,12 @@ describe("Watch", function () {
       return this.consul.watch(opts)._options.timeout;
     };
 
-    should(test()).equal(33000);
-    should(test({ timeout: 1000 })).equal(1000);
-    should(test({ timeout: "1s" })).equal("1s");
-    should(test({ wait: "60s" })).equal(66000);
-    should(test({ wait: "1s" })).equal(1500);
-    should(test({ wait: "33s" })).equal(36300);
+    assert.equal(test(), 33000);
+    assert.equal(test({ timeout: 1000 }), 1000);
+    assert.equal(test({ timeout: "1s" }), "1s");
+    assert.equal(test({ wait: "60s" }), 66000);
+    assert.equal(test({ wait: "1s" }), 1500);
+    assert.equal(test({ wait: "33s" }), 36300);
   });
 
   describe("wait", function () {
@@ -355,14 +354,14 @@ describe("Watch", function () {
         method: async () => null,
       });
 
-      should(watch._wait()).equal(200);
-      should(watch._wait()).equal(400);
-      should(watch._wait()).equal(800);
-      should(watch._wait()).equal(1600);
-      should(watch._wait()).equal(3200);
+      assert.equal(watch._wait(), 200);
+      assert.equal(watch._wait(), 400);
+      assert.equal(watch._wait(), 800);
+      assert.equal(watch._wait(), 1600);
+      assert.equal(watch._wait(), 3200);
 
       for (let i = 0; i < 100; i++) {
-        should(watch._wait()).be.below(30001);
+        assert.ok(watch._wait() < 30001);
       }
     });
 
@@ -374,14 +373,14 @@ describe("Watch", function () {
         backoffMax: 20000,
       });
 
-      should(watch._wait()).equal(1000);
-      should(watch._wait()).equal(2000);
-      should(watch._wait()).equal(4000);
-      should(watch._wait()).equal(8000);
-      should(watch._wait()).equal(16000);
+      assert.equal(watch._wait(), 1000);
+      assert.equal(watch._wait(), 2000);
+      assert.equal(watch._wait(), 4000);
+      assert.equal(watch._wait(), 8000);
+      assert.equal(watch._wait(), 16000);
 
       for (let i = 0; i < 100; i++) {
-        should(watch._wait()).be.below(20001);
+        assert.ok(watch._wait() < 20001);
       }
     });
   });

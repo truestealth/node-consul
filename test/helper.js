@@ -1,5 +1,3 @@
-import "should";
-
 import nock from "nock";
 import sinon from "sinon";
 

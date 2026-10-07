@@ -1,5 +1,5 @@
 import { once } from "node:events";
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -50,18 +50,18 @@ helper.describe("Watch", function () {
       ]);
 
       const values = changes.map((data) => data && data.Value);
-      should(values).eql([undefined, "1", "2", "3", undefined]);
-      should(errors).be.empty();
-      should(watch.isRunning()).be.true();
+      assert.deepEqual(values, [undefined, "1", "2", "3", undefined]);
+      assert.equal(errors.length, 0);
+      assert.equal(watch.isRunning(), true);
 
       watch.end();
-      should(watch.isRunning()).be.false();
+      assert.equal(watch.isRunning(), false);
       watch._run();
-      should(watch.isRunning()).be.false();
-      should(updateTimes).not.be.empty();
+      assert.equal(watch.isRunning(), false);
+      assert.ok(updateTimes.length > 0);
       updateTimes.forEach(function (updateTime, index) {
         if (index === 0) return;
-        should(updateTime).be.aboveOrEqual(updateTimes[index - 1]);
+        assert.ok(updateTime >= updateTimes[index - 1]);
       });
     } finally {
       watch.end();
@@ -74,9 +74,9 @@ helper.describe("Watch", function () {
       const [error] = await once(watch, "error", {
         signal: AbortSignal.timeout(5000),
       });
-      should(error).have.property("statusCode", 400);
-      should(watch).have.property("_attempts", 0);
-      should(watch).have.property("_end", true);
+      assert.deepEqual(error.statusCode, 400);
+      assert.deepEqual(watch._attempts, 0);
+      assert.deepEqual(watch._end, true);
     } finally {
       watch.end();
     }
@@ -99,12 +99,12 @@ helper.describe("Watch", function () {
         const [error] = await once(watch, "error", {
           signal: AbortSignal.timeout(5000),
         });
-        should(error.message).equal(message);
+        assert.equal(error.message, message);
         times.push(Date.now());
       }
-      should(times[0] - time).be.approximately(0, 100);
-      should(times[1] - times[0]).be.approximately(200, 100);
-      should(times[2] - times[1]).be.approximately(400, 100);
+      assert.ok(Math.abs(times[0] - time) <= 100);
+      assert.ok(Math.abs(times[1] - times[0] - 200) <= 100);
+      assert.ok(Math.abs(times[2] - times[1] - 400) <= 100);
     } finally {
       watch.end();
     }

@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -27,7 +27,7 @@ helper.describe("Session", function () {
   describe("create", function () {
     it("should create session", async function () {
       const session = await this.c1.session.create();
-      should(session).have.keys("ID");
+      assert.ok(Object.hasOwn(session, "ID"));
     });
   });
 
@@ -36,7 +36,7 @@ helper.describe("Session", function () {
       await this.c1.session.destroy(this.id);
 
       const session = await this.c1.session.get(this.id);
-      should.not.exist(session);
+      assert.ok(session == null);
     });
   });
 
@@ -44,15 +44,17 @@ helper.describe("Session", function () {
     it("should return session information", async function () {
       const session = await this.c1.session.get(this.id);
 
-      should(session).have.properties(
-        "CreateIndex",
-        "ID",
-        "Name",
-        "Node",
-        "NodeChecks",
-        "LockDelay",
-        "Behavior",
-        "TTL",
+      assert.ok(
+        [
+          "CreateIndex",
+          "ID",
+          "Name",
+          "Node",
+          "NodeChecks",
+          "LockDelay",
+          "Behavior",
+          "TTL",
+        ].every((key) => key in session),
       );
     });
   });
@@ -61,19 +63,21 @@ helper.describe("Session", function () {
     it("should return sessions for node", async function () {
       const sessions = await this.c1.session.node("node1");
 
-      should(sessions).be.an.instanceof(Array);
-      should(sessions.length).be.above(0);
+      assert.ok(sessions instanceof Array);
+      assert.ok(sessions.length > 0);
 
       for (const session of sessions) {
-        should(session).have.properties(
-          "CreateIndex",
-          "ID",
-          "Name",
-          "Node",
-          "NodeChecks",
-          "LockDelay",
-          "Behavior",
-          "TTL",
+        assert.ok(
+          [
+            "CreateIndex",
+            "ID",
+            "Name",
+            "Node",
+            "NodeChecks",
+            "LockDelay",
+            "Behavior",
+            "TTL",
+          ].every((key) => key in session),
         );
       }
     });
@@ -81,8 +85,8 @@ helper.describe("Session", function () {
     it("should return an empty list when no node found", async function () {
       const sessions = await this.c1.session.node("node");
 
-      should(sessions).be.an.instanceof(Array);
-      should(sessions.length).be.eql(0);
+      assert.ok(sessions instanceof Array);
+      assert.deepEqual(sessions.length, 0);
     });
   });
 
@@ -90,19 +94,21 @@ helper.describe("Session", function () {
     it("should return all sessions", async function () {
       const sessions = await this.c1.session.list();
 
-      should(sessions).be.an.instanceof(Array);
-      should(sessions.length).be.above(0);
+      assert.ok(sessions instanceof Array);
+      assert.ok(sessions.length > 0);
 
       for (const session of sessions) {
-        should(session).have.properties(
-          "CreateIndex",
-          "ID",
-          "Name",
-          "Node",
-          "NodeChecks",
-          "LockDelay",
-          "Behavior",
-          "TTL",
+        assert.ok(
+          [
+            "CreateIndex",
+            "ID",
+            "Name",
+            "Node",
+            "NodeChecks",
+            "LockDelay",
+            "Behavior",
+            "TTL",
+          ].every((key) => key in session),
         );
       }
     });
@@ -112,19 +118,21 @@ helper.describe("Session", function () {
     it("should renew session", async function () {
       const renew = await this.c1.session.renew(this.id);
 
-      should(renew).be.an.Array();
+      assert.ok(Array.isArray(renew));
 
-      should(renew).not.be.empty();
+      assert.ok(renew.length > 0);
 
-      should(renew[0]).properties(
-        "CreateIndex",
-        "ID",
-        "Name",
-        "Node",
-        "NodeChecks",
-        "LockDelay",
-        "Behavior",
-        "TTL",
+      assert.ok(
+        [
+          "CreateIndex",
+          "ID",
+          "Name",
+          "Node",
+          "NodeChecks",
+          "LockDelay",
+          "Behavior",
+          "TTL",
+        ].every((key) => key in renew[0]),
       );
     });
   });

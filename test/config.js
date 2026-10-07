@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import should from "should";
+import assert from "node:assert/strict";
 import * as helper from "./helper.js";
 
 describe("Config", function () {
@@ -19,7 +19,7 @@ describe("Config", function () {
         kind: "service-defaults",
         name: "web",
       });
-      should(data).eql(entry);
+      assert.deepEqual(data, entry);
     });
 
     it("should preserve common read options", async function () {
@@ -53,9 +53,10 @@ describe("Config", function () {
     it("should return undefined for a missing entry", async function () {
       this.nock.get("/v1/config/service-defaults/web").reply(404, "not found");
 
-      should(
+      assert.equal(
         await this.consul.config.get({ kind: "service-defaults", name: "web" }),
-      ).equal(undefined);
+        undefined,
+      );
     });
 
     it("should include responses for existing and missing entries", async function () {
@@ -69,24 +70,25 @@ describe("Config", function () {
         name: "web",
         ctx,
       });
-      should(response.statusCode).equal(200);
-      should(data).eql(entry);
+      assert.equal(response.statusCode, 200);
+      assert.deepEqual(data, entry);
 
       const missing = await this.consul.config.get({
         kind: "service-defaults",
         name: "none",
         ctx,
       });
-      should(missing).have.length(1);
-      should(missing[0].statusCode).equal(404);
+      assert.equal(missing.length, 1);
+      assert.equal(missing[0].statusCode, 404);
     });
 
     it("should preserve HTTP errors", async function () {
       this.nock.get("/v1/config/service-defaults/web").reply(403, "denied");
 
-      await should(
+      await assert.rejects(
         this.consul.config.get({ kind: "service-defaults", name: "web" }),
-      ).be.rejectedWith({ statusCode: 403 });
+        { statusCode: 403 },
+      );
     });
 
     it("should preserve network errors without a response", async function () {
@@ -96,9 +98,10 @@ describe("Config", function () {
         }),
       );
 
-      await should(
+      await assert.rejects(
         this.consul.config.get({ kind: "service-defaults", name: "web" }),
-      ).be.rejectedWith({ code: "ECONNRESET" });
+        { code: "ECONNRESET" },
+      );
     });
 
     it("should escape names as a single path parameter", async function () {
@@ -118,7 +121,7 @@ describe("Config", function () {
       const scope = this.nock.put("/v1/config", entry).reply(200, true);
       const options = Object.freeze({ entry: Object.freeze(entry) });
 
-      should(await this.consul.config.set(options)).equal(true);
+      assert.equal(await this.consul.config.set(options), true);
       scope.done();
     });
 
@@ -128,7 +131,7 @@ describe("Config", function () {
         .query({ cas: "0", dc: "dc2", ns: "team", partition: "part1" })
         .reply(200, false);
 
-      should(
+      assert.equal(
         await this.consul.config.set({
           entry,
           cas: 0,
@@ -136,7 +139,8 @@ describe("Config", function () {
           ns: "team",
           partition: "part1",
         }),
-      ).equal(false);
+        false,
+      );
       scope.done();
     });
 
@@ -147,7 +151,7 @@ describe("Config", function () {
           .query({ cas: "18446744073709551615" })
           .reply(200, true);
 
-        should(await this.consul.config.set({ entry, cas })).equal(true);
+        assert.equal(await this.consul.config.set({ entry, cas }), true);
         scope.done();
       });
     });
@@ -175,7 +179,7 @@ describe("Config", function () {
       };
       const scope = this.nock.put("/v1/config", intentions).reply(200, true);
 
-      should(await this.consul.config.set({ entry: intentions })).equal(true);
+      assert.equal(await this.consul.config.set({ entry: intentions }), true);
       scope.done();
     });
   });
@@ -184,7 +188,9 @@ describe("Config", function () {
     it("should list entries by kind", async function () {
       this.nock.get("/v1/config/service-defaults").reply(200, [entry]);
 
-      should(await this.consul.config.list("service-defaults")).eql([entry]);
+      assert.deepEqual(await this.consul.config.list("service-defaults"), [
+        entry,
+      ]);
     });
 
     it("should forward list filters and blocking options", async function () {
@@ -199,7 +205,7 @@ describe("Config", function () {
         })
         .reply(200, []);
 
-      should(
+      assert.deepEqual(
         await this.consul.config.list({
           kind: "service-defaults",
           filter: `Name == "web"`,
@@ -208,7 +214,8 @@ describe("Config", function () {
           index: 42,
           wait: "1s",
         }),
-      ).eql([]);
+        [],
+      );
       scope.done();
     });
   });
@@ -217,17 +224,19 @@ describe("Config", function () {
     it("should delete entries without CAS", async function () {
       this.nock.delete("/v1/config/service-defaults/web").reply(200, {});
 
-      should(
+      assert.equal(
         await this.consul.config.del({ kind: "service-defaults", name: "web" }),
-      ).equal(true);
+        true,
+      );
     });
 
     it("should preserve HTTP errors instead of returning success", async function () {
       this.nock.delete("/v1/config/service-defaults/web").reply(403, "denied");
 
-      await should(
+      await assert.rejects(
         this.consul.config.del({ kind: "service-defaults", name: "web" }),
-      ).be.rejectedWith({ statusCode: 403 });
+        { statusCode: 403 },
+      );
     });
 
     it("should preserve network errors instead of returning success", async function () {
@@ -237,9 +246,10 @@ describe("Config", function () {
           Object.assign(new Error("connection lost"), { code: "ECONNRESET" }),
         );
 
-      await should(
+      await assert.rejects(
         this.consul.config.del({ kind: "service-defaults", name: "web" }),
-      ).be.rejectedWith({ code: "ECONNRESET" });
+        { code: "ECONNRESET" },
+      );
     });
 
     it("should preserve CAS zero instead of deleting unconditionally", async function () {
@@ -248,7 +258,7 @@ describe("Config", function () {
         .query({ cas: "0", ns: "team", partition: "part1" })
         .reply(200, false);
 
-      should(
+      assert.equal(
         await this.consul.config.delete({
           kind: "service-defaults",
           name: "web",
@@ -256,7 +266,8 @@ describe("Config", function () {
           ns: "team",
           partition: "part1",
         }),
-      ).equal(false);
+        false,
+      );
       scope.done();
     });
 
@@ -266,13 +277,14 @@ describe("Config", function () {
         .query({ cas: "42" })
         .reply(200, true);
 
-      should(
+      assert.equal(
         await this.consul.config.del({
           kind: "service-defaults",
           name: "web",
           cas: 42,
         }),
-      ).equal(true);
+        true,
+      );
       scope.done();
     });
   });
@@ -297,9 +309,9 @@ describe("Config", function () {
           name: "web",
           ctx,
         });
-        should(response.statusCode).equal(200);
-        should(data).eql(method === "del" ? true : body);
-        should(response.body).eql(body);
+        assert.equal(response.statusCode, 200);
+        assert.deepEqual(data, method === "del" ? true : body);
+        assert.deepEqual(response.body, body);
         scope.done();
       },
     );
@@ -308,7 +320,7 @@ describe("Config", function () {
   ["get", "list", "del"].forEach(function (method) {
     it(method + " should require a kind", async function () {
       for (const kind of [undefined, "", 123]) {
-        await should(this.consul.config[method]({ kind })).be.rejectedWith({
+        await assert.rejects(this.consul.config[method]({ kind }), {
           message: "consul: config." + method + ": kind required",
           isValidation: true,
         });
@@ -319,19 +331,20 @@ describe("Config", function () {
   ["get", "del"].forEach(function (method) {
     it(method + " should require a name", async function () {
       for (const name of [undefined, "", 123]) {
-        await should(
+        await assert.rejects(
           this.consul.config[method]({ kind: "service-defaults", name }),
-        ).be.rejectedWith({
-          message: "consul: config." + method + ": name required",
-          isValidation: true,
-        });
+          {
+            message: "consul: config." + method + ": name required",
+            isValidation: true,
+          },
+        );
       }
     });
   });
 
   it("set should require an object entry", async function () {
     for (const invalid of [undefined, null, [], "entry"]) {
-      await should(this.consul.config.set({ entry: invalid })).be.rejectedWith({
+      await assert.rejects(this.consul.config.set({ entry: invalid }), {
         message: "consul: config.set: entry required",
         isValidation: true,
       });
@@ -340,20 +353,19 @@ describe("Config", function () {
 
   it("set should require entry Kind and Name", async function () {
     for (const Kind of [undefined, "", 123]) {
-      await should(this.consul.config.set({ entry: { Kind } })).be.rejectedWith(
+      await assert.rejects(this.consul.config.set({ entry: { Kind } }), {
+        message: "consul: config.set: entry.Kind required",
+        isValidation: true,
+      });
+    }
+    for (const Name of [undefined, "", 123]) {
+      await assert.rejects(
+        this.consul.config.set({ entry: { Kind: "service-defaults", Name } }),
         {
-          message: "consul: config.set: entry.Kind required",
+          message: "consul: config.set: entry.Name required",
           isValidation: true,
         },
       );
-    }
-    for (const Name of [undefined, "", 123]) {
-      await should(
-        this.consul.config.set({ entry: { Kind: "service-defaults", Name } }),
-      ).be.rejectedWith({
-        message: "consul: config.set: entry.Name required",
-        isValidation: true,
-      });
     }
   });
 
@@ -372,14 +384,15 @@ describe("Config", function () {
         "invalid",
         "18446744073709551616",
       ]) {
-        await should(
+        await assert.rejects(
           this.consul.config[method]({
             entry,
             kind: "service-defaults",
             name: "web",
             cas,
           }),
-        ).be.rejectedWith({ isValidation: true });
+          { isValidation: true },
+        );
       }
     });
   });

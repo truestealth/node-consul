@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -25,46 +25,50 @@ helper.describe("Kv", function () {
     it("should return one kv pair", async function () {
       const data = await this.c1.kv.get(this.key);
 
-      should(data).have.keys(
-        "CreateIndex",
-        "ModifyIndex",
-        "LockIndex",
-        "Key",
-        "Flags",
-        "Value",
+      assert.ok(
+        [
+          "CreateIndex",
+          "ModifyIndex",
+          "LockIndex",
+          "Key",
+          "Flags",
+          "Value",
+        ].every((key) => Object.hasOwn(data, key)),
       );
-      should(data.Key).eql(this.key);
-      should(data.Flags).eql(0);
-      should(data.Value).eql(this.value);
+      assert.deepEqual(data.Key, this.key);
+      assert.deepEqual(data.Flags, 0);
+      assert.deepEqual(data.Value, this.value);
     });
 
     it("should return raw value", async function () {
       const data = await this.c1.kv.get({ key: this.key, raw: true });
-      should(Buffer.from(this.value)).eql(data);
+      assert.deepEqual(Buffer.from(this.value), data);
     });
 
     it("should return no kv pair", async function () {
       const data = await this.c1.kv.get("none");
-      should.not.exist(data);
+      assert.ok(data == null);
     });
 
     it("should return list of kv pairs", async function () {
       const data = await this.c1.kv.get({ recurse: true });
-      should(data).be.instanceof(Array);
-      should(data.length).eql(1);
+      assert.ok(data instanceof Array);
+      assert.deepEqual(data.length, 1);
 
       const item = data[0];
-      should(item).have.keys(
-        "CreateIndex",
-        "ModifyIndex",
-        "LockIndex",
-        "Key",
-        "Flags",
-        "Value",
+      assert.ok(
+        [
+          "CreateIndex",
+          "ModifyIndex",
+          "LockIndex",
+          "Key",
+          "Flags",
+          "Value",
+        ].every((key) => Object.hasOwn(item, key)),
       );
-      should(item.Key).eql(this.key);
-      should(item.Flags).eql(0);
-      should(item.Value).eql(this.value);
+      assert.deepEqual(item.Key, this.key);
+      assert.deepEqual(item.Flags, 0);
+      assert.deepEqual(item.Value, this.value);
     });
 
     it("should wait for update", async function () {
@@ -81,7 +85,7 @@ helper.describe("Kv", function () {
       await this.c1.kv.set(this.key, update);
 
       const data = await waitingGet;
-      should(data.Value).eql(update);
+      assert.deepEqual(data.Value, update);
     });
   });
 
@@ -94,11 +98,12 @@ helper.describe("Kv", function () {
 
     it("should return keys", async function () {
       const data = await this.c1.kv.keys("a");
-      should(data).be.instanceof(Array);
+      assert.ok(data instanceof Array);
 
-      should(data.length).equal(3);
+      assert.equal(data.length, 3);
 
-      should(data).eql(
+      assert.deepEqual(
+        data,
         this.keys.filter((key) => {
           return key.match(/^a/);
         }),
@@ -110,11 +115,12 @@ helper.describe("Kv", function () {
         key: "a/",
         separator: "/",
       });
-      should(data).be.instanceof(Array);
+      assert.ok(data instanceof Array);
 
-      should(data.length).equal(3);
+      assert.equal(data.length, 3);
 
-      should(data).eql(
+      assert.deepEqual(
+        data,
         this.keys
           .filter((key) => {
             return key.match(/^a\//);
@@ -127,9 +133,9 @@ helper.describe("Kv", function () {
 
     it("should return all keys", async function () {
       const data = await this.c1.kv.keys();
-      should(data).be.instanceof(Array);
+      assert.ok(data instanceof Array);
 
-      should(data.length).equal(4);
+      assert.equal(data.length, 4);
     });
   });
 
@@ -140,18 +146,20 @@ helper.describe("Kv", function () {
       const value = "two";
 
       const ok = await c.kv.set(key, value);
-      should(ok).be.true();
+      assert.equal(ok, true);
 
       const data = await c.kv.get(key);
-      should(data).have.keys(
-        "CreateIndex",
-        "ModifyIndex",
-        "LockIndex",
-        "Key",
-        "Flags",
-        "Value",
+      assert.ok(
+        [
+          "CreateIndex",
+          "ModifyIndex",
+          "LockIndex",
+          "Key",
+          "Flags",
+          "Value",
+        ].every((key) => Object.hasOwn(data, key)),
       );
-      should(data.Value).eql(value);
+      assert.deepEqual(data.Value, value);
     });
 
     it("should create kv pair with null value", async function () {
@@ -160,28 +168,30 @@ helper.describe("Kv", function () {
       const value = null;
 
       const ok = await c.kv.set(key, value);
-      should(ok).be.true();
+      assert.equal(ok, true);
 
       const data = await c.kv.get(key);
-      should(data).have.keys(
-        "CreateIndex",
-        "ModifyIndex",
-        "LockIndex",
-        "Key",
-        "Flags",
-        "Value",
+      assert.ok(
+        [
+          "CreateIndex",
+          "ModifyIndex",
+          "LockIndex",
+          "Key",
+          "Flags",
+          "Value",
+        ].every((key) => Object.hasOwn(data, key)),
       );
-      should(data.Value).be.null();
+      assert.equal(data.Value, null);
     });
   });
 
   describe("del", function () {
     it("should delete kv pair", async function () {
       const del = await this.c1.kv.del(this.key);
-      should(del).equal(true);
+      assert.equal(del, true);
 
       const data = await this.c1.kv.get(this.key);
-      should.not.exist(data);
+      assert.ok(data == null);
     });
   });
 });

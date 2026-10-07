@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import should from "should";
+import assert from "node:assert/strict";
 import * as helper from "./helper.js";
 
 helper.describe("Config", function () {
@@ -18,7 +18,7 @@ helper.describe("Config", function () {
       Name: this.name,
       Protocol: "http",
     };
-    should(await this.c1.config.set({ entry: this.entry, cas: 0 })).equal(true);
+    assert.equal(await this.c1.config.set({ entry: this.entry, cas: 0 }), true);
   });
 
   afterEach(async function () {
@@ -31,11 +31,14 @@ helper.describe("Config", function () {
       kind: "service-defaults",
       name: this.name,
     });
-    should(entry).containEql(this.entry);
-    should(entry.ModifyIndex).be.above(0);
+    assert.partialDeepStrictEqual(entry, this.entry);
+    assert.ok(entry.ModifyIndex > 0);
 
     const entries = await this.c1.config.list("service-defaults");
-    should(entries.some((item) => item.Name === this.name)).equal(true);
+    assert.equal(
+      entries.some((item) => item.Name === this.name),
+      true,
+    );
   });
 
   it("should preserve create-only and conditional write/delete semantics", async function () {
@@ -43,32 +46,37 @@ helper.describe("Config", function () {
     const original = await this.c1.config.get(options);
     const updatedEntry = { ...this.entry, Protocol: "tcp" };
 
-    should(await this.c1.config.set({ entry: updatedEntry, cas: 0 })).equal(
+    assert.equal(
+      await this.c1.config.set({ entry: updatedEntry, cas: 0 }),
       false,
     );
-    should(
+    assert.equal(
       await this.c1.config.set({
         entry: updatedEntry,
         cas: original.ModifyIndex + 1,
       }),
-    ).equal(false);
-    should(
+      false,
+    );
+    assert.equal(
       await this.c1.config.set({
         entry: updatedEntry,
         cas: original.ModifyIndex,
       }),
-    ).equal(true);
+      true,
+    );
 
-    should(await this.c1.config.delete({ ...options, cas: 0 })).equal(false);
-    should(
+    assert.equal(await this.c1.config.delete({ ...options, cas: 0 }), false);
+    assert.equal(
       await this.c1.config.del({ ...options, cas: original.ModifyIndex }),
-    ).equal(false);
+      false,
+    );
     const updated = await this.c1.config.get(options);
-    should(updated.Protocol).equal("tcp");
-    should(
+    assert.equal(updated.Protocol, "tcp");
+    assert.equal(
       await this.c1.config.del({ ...options, cas: updated.ModifyIndex }),
-    ).equal(true);
-    should(await this.c1.config.get(options)).equal(undefined);
+      true,
+    );
+    assert.equal(await this.c1.config.get(options), undefined);
   });
 
   it("should unblock configuration reads after an update", async function () {
@@ -85,7 +93,7 @@ helper.describe("Config", function () {
     });
 
     await this.c1.config.set({ entry: { ...this.entry, Protocol: "tcp" } });
-    should((await reading).Protocol).equal("tcp");
+    assert.equal((await reading).Protocol, "tcp");
   });
 
   it("should manage L4 and L7 intentions through Config Entries", async function () {
@@ -105,25 +113,38 @@ helper.describe("Config", function () {
         },
       ],
     };
-    should(await this.c1.config.set({ entry: intentions, cas: 0 })).equal(true);
+    assert.equal(await this.c1.config.set({ entry: intentions, cas: 0 }), true);
 
     const options = { kind: "service-intentions", name: this.name };
     const stored = await this.c1.config.get(options);
-    should(stored.Sources).containDeep(intentions.Sources);
+    for (const source of intentions.Sources) {
+      assert.partialDeepStrictEqual(
+        stored.Sources.find((item) => item.Name === source.Name),
+        source,
+      );
+    }
     const entries = await this.c1.config.list("service-intentions");
-    should(entries.some((item) => item.Name === this.name)).equal(true);
+    assert.equal(
+      entries.some((item) => item.Name === this.name),
+      true,
+    );
 
     const updated = {
       ...intentions,
       Sources: [{ Name: "consul-smoke-source-admin", Action: "deny" }],
     };
-    should(
+    assert.equal(
       await this.c1.config.set({ entry: updated, cas: stored.ModifyIndex }),
-    ).equal(true);
-    should((await this.c1.config.get(options)).Sources).containDeep(
-      updated.Sources,
+      true,
     );
-    should(await this.c1.config.del(options)).equal(true);
-    should(await this.c1.config.get(options)).equal(undefined);
+    const updatedSources = (await this.c1.config.get(options)).Sources;
+    for (const source of updated.Sources) {
+      assert.partialDeepStrictEqual(
+        updatedSources.find((item) => item.Name === source.Name),
+        source,
+      );
+    }
+    assert.equal(await this.c1.config.del(options), true);
+    assert.equal(await this.c1.config.get(options), undefined);
   });
 });

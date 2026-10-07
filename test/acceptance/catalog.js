@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 
 import * as helper from "./helper.js";
@@ -33,7 +33,7 @@ helper.describe("Catalog", function () {
   describe("datacenters", function () {
     it("should return all known datacenters", async function () {
       const data = await this.c1.catalog.datacenters();
-      should(data).eql(["dc1"]);
+      assert.deepEqual(data, ["dc1"]);
     });
   });
 
@@ -41,12 +41,18 @@ helper.describe("Catalog", function () {
     describe("list", function () {
       it("should return all nodes in the current dc", async function () {
         const data = await this.c1.catalog.node.list();
-        should(data).match([{ Node: "node1", Address: "127.0.0.1" }]);
+        assert.partialDeepStrictEqual(data[0], {
+          Node: "node1",
+          Address: "127.0.0.1",
+        });
       });
 
       it("should return all nodes in specified dc", async function () {
         const data = await this.c1.catalog.nodes("dc1");
-        should(data).match([{ Node: "node1", Address: "127.0.0.1" }]);
+        assert.partialDeepStrictEqual(data[0], {
+          Node: "node1",
+          Address: "127.0.0.1",
+        });
       });
     });
 
@@ -54,16 +60,21 @@ helper.describe("Catalog", function () {
       it("should return all services for a given node", async function () {
         const data = await this.c1.catalog.node.services("node1");
 
-        should.exist(data);
-        should.exist(data.Services);
-        should.exist(data.Services[this.service.name]);
-        should(data.Services[this.service.name]).have.properties(
-          "ID",
-          "Service",
-          "Tags",
+        assert.ok(data != null);
+        assert.ok(data.Services != null);
+        assert.ok(data.Services[this.service.name] != null);
+        assert.ok(
+          ["ID", "Service", "Tags"].every(
+            (key) => key in data.Services[this.service.name],
+          ),
         );
-        should(data.Services[this.service.name].Service).eql(this.service.name);
-        should(data.Services[this.service.name].Tags).eql([this.service.tag]);
+        assert.deepEqual(
+          data.Services[this.service.name].Service,
+          this.service.name,
+        );
+        assert.deepEqual(data.Services[this.service.name].Tags, [
+          this.service.tag,
+        ]);
       });
     });
   });
@@ -74,19 +85,19 @@ helper.describe("Catalog", function () {
         const data = await this.c1.catalog.service.list();
         const services = { consul: [] };
         services[this.service.name] = [this.service.tag];
-        should(data).eql(services);
+        assert.deepEqual(data, services);
       });
     });
 
     describe("nodes", function () {
       it("should return all nodes for a given service", async function () {
         const data = await this.c1.catalog.service.nodes(this.service.name);
-        should(data).be.instanceof(Array);
+        assert.ok(data instanceof Array);
 
         const nodes = data.map((n) => {
           return n.Node;
         });
-        should(nodes).eql(["node1"]);
+        assert.deepEqual(nodes, ["node1"]);
       });
     });
   });

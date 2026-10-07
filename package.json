@@ -1,6 +1,6 @@
 {
   "name": "@truestealth/consul",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Dependency-free ESM client for the HashiCorp Consul HTTP API",
   "type": "module",
   "main": "./lib/index.js",
@@ -29,37 +29,28 @@
     "MIGRATION.ru.md"
   ],
   "packageManager": "pnpm@10.34.6",
-  "pnpm": {
-    "overrides": {
-      "jshint>lodash": "^4.18.1",
-      "jshint>minimatch": "^3.1.5"
-    }
-  },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.19.1",
     "c8": "^12.0.0",
     "debug": "^4.4.3",
-    "jshint": "^2.13.6",
+    "eslint": "^10.12.0",
+    "expect-type": "^1.4.0",
+    "globals": "^17.13.0",
     "mocha": "^12.0.3",
     "nock": "^15.0.1",
     "prettier": "^3.9.9",
-    "should": "^13.2.3",
     "sinon": "^22.1.0",
-    "tsd": "^0.33.0"
+    "typescript": "^7.0.2"
   },
   "scripts": {
-    "format": "prettier -w lib test test-d scripts .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto",
-    "test": "node --check lib/commonjs.mjs && jshint lib test && prettier -c lib test test-d scripts .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto && c8 --all --include=lib/**/*.js --check-coverage --100 mocha --recursive --check-leaks",
-    "types": "tsd",
+    "format": "prettier -w lib test test-d scripts .github package.json eslint.config.js tsconfig.types.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md --end-of-line auto",
+    "lint": "eslint lib test scripts eslint.config.js --max-warnings=0",
+    "test": "npm run lint && prettier -c lib test test-d scripts .github package.json eslint.config.js tsconfig.types.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md --end-of-line auto && c8 --all --include=lib/**/*.js --check-coverage --100 mocha --recursive --check-leaks",
+    "types": "tsc -p tsconfig.types.json",
     "package:check": "node scripts/package-smoke.js",
     "acceptance": "node scripts/acceptance.js",
     "acceptanceSetupMacOS": "sudo ifconfig lo0 alias 127.0.0.2 up && sudo ifconfig lo0 alias 127.0.0.3 up"
-  },
-  "tsd": {
-    "compilerOptions": {
-      "module": "NodeNext",
-      "moduleResolution": "NodeNext"
-    }
   },
   "keywords": [
     "consul",

@@ -1,5 +1,3 @@
-import "should";
-
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import path from "node:path";

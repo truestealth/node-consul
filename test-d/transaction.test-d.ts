@@ -1,6 +1,6 @@
 import { EventEmitter } from "node:events";
 import { IncomingMessage } from "node:http";
-import { expectType, expectError } from "tsd";
+import { expectTypeOf } from "expect-type";
 import Consul from "../lib/index.js";
 import type {
   CreateResult,
@@ -81,18 +81,22 @@ const operations: Operation[] = [
     },
   },
 ];
-expectType<Promise<CreateResult>>(consul.transaction.create(operations));
+expectTypeOf(consul.transaction.create(operations)).toEqualTypeOf<
+  Promise<CreateResult>
+>();
 const frozen = [{ KV: { Verb: "get", Key: "key" } }] as const;
-expectType<Promise<CreateResult>>(consul.transaction.create(frozen));
-expectType<Promise<CreateResult>>(
+expectTypeOf(consul.transaction.create(frozen)).toEqualTypeOf<
+  Promise<CreateResult>
+>();
+expectTypeOf(
   consul.transaction.create([
     { KV: { Verb: "cas", Key: "key", Value: "", Index: 0 } },
   ]),
-);
+).toEqualTypeOf<Promise<CreateResult>>();
 const ctx = Object.assign(new EventEmitter(), {
   includeResponse: true as const,
 });
-expectType<Promise<[IncomingMessage, CreateResult]>>(
+expectTypeOf(
   consul.transaction.create(operations, {
     ctx,
     token: "token",
@@ -102,86 +106,65 @@ expectType<Promise<[IncomingMessage, CreateResult]>>(
     signal: new AbortController().signal,
     timeout: 1000,
   }),
-);
+).toEqualTypeOf<Promise<[IncomingMessage, CreateResult]>>();
 const result = await consul.transaction.create(frozen);
-expectType<TransactionResult[] | null | undefined>(result.Results);
-expectType<TransactionError[] | null | undefined>(result.Errors);
-expectType<string | null | undefined>(result.Results?.[0].KV?.Value);
-expectType<number | undefined>(result.Errors?.[0].OpIndex);
-expectType<string | undefined>(result.Errors?.[0].What);
-expectType<"passing" | "warning" | "critical" | undefined>(
-  result.Results?.[0].Check?.Status,
-);
+expectTypeOf(result.Results).toEqualTypeOf<
+  TransactionResult[] | null | undefined
+>();
+expectTypeOf(result.Errors).toEqualTypeOf<
+  TransactionError[] | null | undefined
+>();
+expectTypeOf(result.Results?.[0].KV?.Value).toEqualTypeOf<
+  string | null | undefined
+>();
+expectTypeOf(result.Errors?.[0].OpIndex).toEqualTypeOf<number | undefined>();
+expectTypeOf(result.Errors?.[0].What).toEqualTypeOf<string | undefined>();
+expectTypeOf(result.Results?.[0].Check?.Status).toEqualTypeOf<
+  "passing" | "warning" | "critical" | undefined
+>();
 
-expectError(
-  consul.transaction.create([
-    { KV: { Verb: "create", Key: "key", Value: "" } },
-  ]),
-);
-expectError(consul.transaction.create([{ KV: { Verb: "set", Key: "key" } }]));
-expectError(
-  consul.transaction.create([{ KV: { Verb: "cas", Key: "key", Value: "" } }]),
-);
-expectError(
-  consul.transaction.create([
-    { KV: { Verb: "cas", Key: "key", Value: "", Index: 1n } },
-  ]),
-);
-expectError(
-  consul.transaction.create([{ KV: { Verb: "lock", Key: "key", Value: "" } }]),
-);
-expectError(
-  consul.transaction.create([{ KV: { Verb: "check-index", Key: "key" } }]),
-);
-expectError(
-  consul.transaction.create([{ KV: { Verb: "check-session", Key: "key" } }]),
-);
-expectError(
-  consul.transaction.create([{ KV: { Verb: "delete-cas", Key: "key" } }]),
-);
-expectError(consul.transaction.create([{ KV: { Verb: "get" } }]));
-expectError(consul.transaction.create([{ Node: { Verb: "get", Node: {} } }]));
-expectError(
-  consul.transaction.create([
-    { Node: { Verb: "cas", Node: { Node: "node1" } } },
-  ]),
-);
-expectError(
-  consul.transaction.create([
-    { Service: { Verb: "get", Service: { ID: "web1" } } },
-  ]),
-);
-expectError(
-  consul.transaction.create([
-    { Service: { Verb: "set", Node: "node1", Service: { ID: "web1" } } },
-  ]),
-);
-expectError(
-  consul.transaction.create([
-    { Check: { Verb: "get", Check: { CheckID: "check1" } } },
-  ]),
-);
-expectError(
-  consul.transaction.create([
-    { Check: { Verb: "cas", Check: { Node: "node1", CheckID: "check1" } } },
-  ]),
-);
-expectError(
-  consul.transaction.create([
-    {
-      Check: {
-        Verb: "set",
-        Check: { Node: "node1", CheckID: "check1", Status: "invalid" },
-      },
-    },
-  ]),
-);
-expectError(
-  consul.transaction.create([
-    {
-      KV: { Verb: "get", Key: "key" },
-      Node: { Verb: "get", Node: { Node: "node1" } },
-    },
-  ]),
-);
-expectError(consul.transaction.create([{ kv: { verb: "get", key: "key" } }]));
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([ { KV: { Verb: "create", Key: "key", Value: "" } }, ]);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([{ KV: { Verb: "set", Key: "key" } }]);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([{ KV: { Verb: "cas", Key: "key", Value: "" } }]);
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([ { KV: { Verb: "cas", Key: "key", Value: "", Index: 1n } }, ]);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([{ KV: { Verb: "lock", Key: "key", Value: "" } }]);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([{ KV: { Verb: "check-index", Key: "key" } }]);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([{ KV: { Verb: "check-session", Key: "key" } }]);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([{ KV: { Verb: "delete-cas", Key: "key" } }]);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([{ KV: { Verb: "get" } }]);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([{ Node: { Verb: "get", Node: {} } }]);
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([ { Node: { Verb: "cas", Node: { Node: "node1" } } }, ]);
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([ { Service: { Verb: "get", Service: { ID: "web1" } } }, ]);
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([ { Service: { Verb: "set", Node: "node1", Service: { ID: "web1" } } }, ]);
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([ { Check: { Verb: "get", Check: { CheckID: "check1" } } }, ]);
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([ { Check: { Verb: "cas", Check: { Node: "node1", CheckID: "check1" } } }, ]);
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([ { Check: { Verb: "set", Check: { Node: "node1", CheckID: "check1", Status: "invalid" }, }, }, ]);
+// prettier-ignore
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([ { KV: { Verb: "get", Key: "key" }, Node: { Verb: "get", Node: { Node: "node1" } }, }, ]);
+// @ts-expect-error Некорректные параметры или отсутствующее поле должны отклоняться.
+consul.transaction.create([{ kv: { verb: "get", key: "key" } }]);

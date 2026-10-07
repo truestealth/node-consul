@@ -1,4 +1,4 @@
-import should from "should";
+import assert from "node:assert/strict";
 
 import * as helper from "./helper.js";
 
@@ -62,7 +62,7 @@ describe("Transaction", function () {
       this.nock.put("/v1/txn", operations).reply(200, { ok: true });
 
       const data = await this.consul.transaction.create(operations);
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should accept an option as arguments", async function () {
@@ -123,16 +123,16 @@ describe("Transaction", function () {
       const data = await this.consul.transaction.create(operations, {
         stale: true,
       });
-      should(data).eql({ ok: true });
+      assert.deepEqual(data, { ok: true });
     });
 
     it("should require a list of operations", async function () {
       try {
         await this.consul.transaction.create();
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
+        assert.deepEqual(
+          err.message,
           "consul: Transaction.create: a list of operations are required as first arguments",
         );
       }
@@ -141,10 +141,10 @@ describe("Transaction", function () {
     it("should require a list of operations", async function () {
       try {
         await this.consul.transaction.create([]);
-        should.ok(false);
+        assert.ok(false);
       } catch (err) {
-        should(err).have.property(
-          "message",
+        assert.deepEqual(
+          err.message,
           "consul: Transaction.create: operations must be an array with at least one item",
         );
       }
