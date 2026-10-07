@@ -70,7 +70,7 @@ async function start() {
 
 ## Настройки TypeScript
 
-Нужен TypeScript 5 или новее. Для Node.js задайте `module: "NodeNext"` и
+Нужен TypeScript 5.4 или новее. Для Node.js задайте `module: "NodeNext"` и
 `moduleResolution: "NodeNext"`.
 Для ESM используйте package с `"type": "module"` или расширение `.mts`.
 В CommonJS-файлах `.cts` доступно

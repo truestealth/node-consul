@@ -66,7 +66,7 @@ async function start() {
 
 ## 3. Adjust TypeScript's module resolution
 
-Use TypeScript 5 or newer. For a Node.js application, use `module: "NodeNext"` and
+Use TypeScript 5.4 or newer. For a Node.js application, use `module: "NodeNext"` and
 `moduleResolution: "NodeNext"`. Use `.mts` or an ESM package for default imports;
 CommonJS `.cts` sources can use `import Consul = require("@truestealth/consul")`.
 Declarations are shipped alongside the source; no separate

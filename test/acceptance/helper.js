@@ -145,6 +145,7 @@ class Cluster {
 
     const clientLog = debugBuffer("consul:client:" + opts.node);
     client.on("log", clientLog);
+    const readinessName = "consul-smoke-readiness-" + randomUUID();
 
     try {
       await retry(async () => {
@@ -156,6 +157,20 @@ class Cluster {
           const leader = await client.status.leader();
           if (!leader) throw new Error("Consul leader is not elected yet");
           if (this.aclEnabled) await client.acl.token.self();
+          const node = await client.catalog.node.services({
+            node: opts.node,
+            consistent: true,
+          });
+          if (!node || !node.Services || !node.Services.consul) {
+            throw new Error(
+              "Consul server is not registered in the catalog yet",
+            );
+          }
+          // Отсутствующая запись не меняется, но DELETE проверяет завершение миграции.
+          await client.config.del({
+            kind: "service-intentions",
+            name: readinessName,
+          });
         } else {
           await client.agent.self();
         }

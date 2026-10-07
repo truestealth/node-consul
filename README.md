@@ -12,7 +12,7 @@ HashiCorp client.
   [Node.js release schedule](https://nodejs.org/en/about/previous-releases).
 - One native **ES module implementation**. Node.js 24 also loads it through `require()`; there is no separate CommonJS build.
 - No runtime dependencies: requests use Node.js `http` and `https`.
-- TypeScript **5 or newer** when using the included declarations.
+- TypeScript **5.4 or newer** when using the included declarations.
 
 Version **1.1.0** adds modern ACL resources and precise Config Entry and
 transaction declarations. Existing client sections and connection options remain.

@@ -137,8 +137,18 @@ try {
     commonjsProbe,
     `
     import Consul = require('@truestealth/consul');
-    const consul = new Consul({ host: 'localhost' });
+    import type { Consul as ConsulInstance, CommonOptions, ConsulOptions, ConfigEntry, ServiceIntentionsEntry, TransactionOperation, TransactionCreateResult, AclTokenEntry, AclTokenResult } from '@truestealth/consul';
+    const clientOptions: ConsulOptions = { host: 'localhost' };
+    const consul: Consul = new Consul(clientOptions);
+    const instance: ConsulInstance = consul;
+    const options: CommonOptions<false> = { timeout: '1s', signal: new AbortController().signal };
     const value: Promise<string[]> = consul.kv.keys('consul-smoke-prefix');
+    const entry: ConfigEntry<'service-defaults'> = { Kind: 'service-defaults', Name: 'web' };
+    const intentions: Promise<ServiceIntentionsEntry | undefined> = consul.config.get({ kind: 'service-intentions', name: 'web', ...options });
+    const operations: TransactionOperation[] = [{ KV: { Verb: 'set', Key: 'consul-smoke-key', Value: 'dmFsdWU=' } }];
+    const transaction: Promise<TransactionCreateResult> = consul.transaction.create(operations);
+    const tokenEntry: AclTokenEntry = { Description: 'consul-smoke-token' };
+    const token: Promise<AclTokenResult> = consul.acl.token.create({ entry: tokenEntry });
     consul.destroy();
   `,
   );
