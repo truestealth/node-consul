@@ -8,14 +8,14 @@ HashiCorp client.
 
 ## Requirements
 
-- Node.js **24 or newer**. CI covers Node.js 24 and 26; see the
+- Node.js **24 or newer**. CI covers Node.js 24 and 26 on Linux and Windows; see the
   [Node.js release schedule](https://nodejs.org/en/about/previous-releases).
-- Native **ES modules only**. Node.js 24 also loads the same module through `require()`; there is no separate CommonJS build.
+- One native **ES module implementation**. Node.js 24 also loads it through `require()`; there is no separate CommonJS build.
 - No runtime dependencies: requests use Node.js `http` and `https`.
 - TypeScript **5 or newer** when using the included declarations.
 
-Version **1.0.1** combines the native HTTP client with Config Entries and typed
-L4/L7 service intentions.
+Version **1.1.0** adds modern ACL resources and precise Config Entry and
+transaction declarations. Existing client sections and connection options remain.
 
 Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
 [migration guide](MIGRATION.md).
@@ -23,7 +23,7 @@ Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
 ## Get started
 
 ```sh
-npm install @truestealth/consul@1.0.1
+npm install @truestealth/consul@1.1.0
 ```
 
 Use an `.mjs` file or set `"type": "module"` in your application's `package.json`:
@@ -243,21 +243,90 @@ current CAS index. The declarations model L4/L7 fields, but Consul validates the
 complete configuration. Protocol, mesh, and edition restrictions are documented
 in the [service-intentions reference](https://developer.hashicorp.com/consul/docs/reference/config-entry/service-intentions).
 
+## Modern ACLs
+
+`acl.token`, `acl.policy`, `acl.role`, `acl.authMethod`, and `acl.bindingRule`
+provide `create({ entry })`, `update({ id, entry })`, `get(id)`, `list()`, and
+`del(id)`. Auth methods use `name` instead of `id`. Policy and role lookups also
+accept `{ name }`. Tokens support `self()`, `clone(id)`, and
+`get({ id, expanded: true })`.
+
+Use `entry` for Consul's JSON document. Request settings (`token`, `dc`, `ns`,
+`partition`, `timeout`, `signal`) belong outside it:
+
+```js
+const policy = await consul.acl.policy.create({
+  entry: {
+    Name: "example-settings-reader",
+    Rules: 'key_prefix "example/" { policy = "read" }',
+  },
+});
+const issued = await consul.acl.token.create({
+  entry: { Policies: [{ ID: policy.ID }], ExpirationTTL: "1h" },
+});
+try {
+  const item = await consul.kv.get({
+    key: "example/settings",
+    token: issued.SecretID,
+  });
+} finally {
+  await consul.acl.token.del(issued.AccessorID);
+}
+```
+
+Token resource IDs are **AccessorIDs**; authentication uses **SecretIDs**.
+Do not log issued tokens or complete token lists: lists can contain secrets
+depending on ACL permissions. Missing reads resolve to `undefined`; failed
+deletes still reject. Updates do not merge records; retain grants that must
+survive a PUT.
+
+`acl.login({ authMethod, bearerToken, meta })` returns the issued token without
+changing defaults. Use it explicitly, then call
+`acl.logout({ token: issued.SecretID })`. Login requires a configured auth method
+and matching binding rule, not just ACL bootstrap. The
+[ACL API](https://developer.hashicorp.com/consul/api-docs/acl) describes the
+required permissions and server-version restrictions.
+
+## Typed configuration and transactions
+
+`service-defaults`, `proxy-defaults`, and `service-intentions` have dedicated
+declarations and inferred `get/list` results. Other kinds retain the generic
+`ConfigEntry` API. Import `ServiceDefaultsEntry` or `ProxyDefaultsEntry` to check
+a stored document; Consul still validates the actual configuration.
+
+Transactions distinguish KV, Node, Service, and Check operations and supported
+verbs. Annotate arrays kept in a variable so the verb does not widen to `string`:
+
+```ts
+import type { TransactionOperation } from "@truestealth/consul";
+
+const operations: TransactionOperation[] = [
+  { KV: { Verb: "set", Key: "example/settings", Value: "aGVsbG8=" } },
+  { KV: { Verb: "check-index", Key: "example/version", Index: 10 } },
+];
+const result = await consul.transaction.create(operations);
+```
+
+Transaction KV values remain **base64** in requests and results, unlike
+`kv.get()`. A conflict rejects with HTTP 409; inspect the error response's
+`Errors`, not a boolean CAS result. `Results` and `Errors` can be `null`.
+See the [transaction API](https://developer.hashicorp.com/consul/api-docs/txn).
+
 ## The rest of the API
 
 The existing API sections remain available:
 
-| Section       | Examples                                                                    |
-| ------------- | --------------------------------------------------------------------------- |
-| `agent`       | `self()`, `members()`, `service.register()`, `check.register()`             |
-| `health`      | `node({ node })`, `service({ service, passing: true })`, `state({ state })` |
-| `catalog`     | `datacenters()`, `node.list()`, `service.nodes({ service })`                |
-| `session`     | `create()`, `renew({ id })`, `destroy({ id })`                              |
-| `query`       | Prepared-query `create()`, `get()`, `execute()`, `destroy()`                |
-| `event`       | `fire({ name, payload })`, `list()`                                         |
-| `status`      | `leader()`, `peers()`                                                       |
-| `transaction` | `create(operations)`                                                        |
-| `acl`         | `bootstrap()`, `replication()`, and the inherited `legacy` section          |
+| Section       | Examples                                                                             |
+| ------------- | ------------------------------------------------------------------------------------ |
+| `agent`       | `self()`, `members()`, `service.register()`, `check.register()`                      |
+| `health`      | `node({ node })`, `service({ service, passing: true })`, `state({ state })`          |
+| `catalog`     | `datacenters()`, `node.list()`, `service.nodes({ service })`                         |
+| `session`     | `create()`, `renew({ id })`, `destroy({ id })`                                       |
+| `query`       | Prepared-query `create()`, `get()`, `execute()`, `destroy()`                         |
+| `event`       | `fire({ name, payload })`, `list()`                                                  |
+| `status`      | `leader()`, `peers()`                                                                |
+| `transaction` | `create(operations)`                                                                 |
+| `acl`         | Modern resources, `login()`, `logout()`, `bootstrap()`, `replication()` and `legacy` |
 
 Methods return Promises. Method options and result shapes are described by the
 included declarations; consult the
@@ -322,7 +391,8 @@ npm pack --dry-run
 including TLS and cancellation cases. `npm run package:check` installs the actual
 npm archive offline and checks its imports, HTTP requests and NodeNext types.
 
-Acceptance tests start three HashiCorp Consul agents on `127.0.0.1`–`127.0.0.3`.
+Acceptance starts three Consul agents on `127.0.0.1`–`127.0.0.3` and isolated
+single-agent ACL/TLS scenarios.
 Set `CONSUL_BIN` to a local executable if `consul` is not on `PATH`, prepare those
 loopback addresses, then run `npm run acceptance`. The test cluster enables
 Connect and uses the BoltDB Raft backend for Windows compatibility; these are
@@ -337,11 +407,12 @@ runtime npm package, and Consul API inputs are not evaluated as glob patterns.
 Do not pass untrusted patterns to the development tools; the finding remains
 open rather than being hidden by an incompatible override.
 
-Release verification: **303 runtime tests** pass on Node.js 24 and 26. The Node.js 24 coverage check reports 100% statements, branches, functions,
-and lines. Type checks and
-fresh archive-install/import checks pass. **64 acceptance tests** pass against
-HashiCorp Consul **2.0.4 Community**. This does not establish compatibility with
-every server version or edition; inherited endpoints require server support.
+CI checks runtime tests, 100% coverage, declarations and actual archive consumers
+on Node.js 24 and 26, on Linux and Windows. Acceptance uses Consul **1.22.7** and
+**2.0.4 Community**, including authenticated CRUD, JWT login/logout and HTTPS
+with client certificates. These checks do not establish compatibility with every
+server version or edition; inherited endpoints require server support. Enterprise
+namespace/partition behavior remains unverified beyond request mocks.
 
 ## Origin and license
 

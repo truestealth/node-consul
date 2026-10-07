@@ -6,13 +6,15 @@ import type {
   ConfigEntry,
   GetOptions,
   IntentionSource,
+  ProxyDefaultsEntry,
+  ServiceDefaultsEntry,
   ServiceIntentionsEntry,
 } from "../lib/config.js";
 
 const consul = new Consul();
 const signal = new AbortController().signal;
 
-expectType<Promise<ConfigEntry<"service-defaults"> | undefined>>(
+expectType<Promise<ServiceDefaultsEntry | undefined>>(
   consul.config.get({
     kind: "service-defaults",
     name: "web",
@@ -31,7 +33,7 @@ expectType<Promise<ServiceIntentionsEntry | undefined>>(
 expectType<Promise<ServiceIntentionsEntry[]>>(
   consul.config.list("service-intentions"),
 );
-expectType<Promise<ConfigEntry<"service-defaults">[]>>(
+expectType<Promise<ServiceDefaultsEntry[]>>(
   consul.config.list({ kind: "service-defaults", filter: 'Name == "web"' }),
 );
 
@@ -140,4 +142,94 @@ expectError<IntentionSource>({ Name: "frontend", Action: "invalid" });
 expectError<IntentionSource>({
   Name: "frontend",
   Permissions: [{ Action: "allow" }],
+});
+
+const defaults: ServiceDefaultsEntry = {
+  Kind: "service-defaults",
+  Name: "web",
+  Protocol: "http2",
+  Mode: "transparent",
+  MutualTLSMode: "strict",
+  UpstreamConfig: {
+    Defaults: {
+      ConnectTimeoutMs: 5000,
+      MeshGateway: { Mode: "local" },
+      Limits: { MaxConnections: 100 },
+    },
+    Overrides: [{ Name: "api", Protocol: "grpc", Namespace: "team" }],
+  },
+  AdditionalServerSetting: { enabled: true },
+};
+expectType<Promise<boolean>>(consul.config.set({ entry: defaults, cas: 0 }));
+const serviceDefaults = await consul.config.get({
+  kind: "service-defaults",
+  name: "web",
+});
+expectType<"" | "tcp" | "http" | "http2" | "grpc" | undefined>(
+  serviceDefaults?.Protocol,
+);
+expectType<number | undefined>(
+  serviceDefaults?.UpstreamConfig?.Defaults?.ConnectTimeoutMs,
+);
+expectType<Promise<ProxyDefaultsEntry | undefined>>(
+  consul.config.get({ kind: "proxy-defaults", name: "global" }),
+);
+expectType<Promise<ProxyDefaultsEntry[]>>(consul.config.list("proxy-defaults"));
+expectType<Promise<boolean>>(
+  consul.config.set({
+    entry: {
+      Kind: "proxy-defaults",
+      Name: "global",
+      Config: { protocol: "http", envoy_cluster_json: { custom: true } },
+      Expose: {
+        Paths: [{ Path: "/metrics", LocalPathPort: 9000, ListenerPort: 9001 }],
+      },
+    },
+  }),
+);
+expectType<Promise<[IncomingMessage, ServiceDefaultsEntry?]>>(
+  consul.config.get({ kind: "service-defaults", name: "web", ctx }),
+);
+expectType<Promise<ConfigEntry<"future-kind"> | undefined>>(
+  consul.config.get({ kind: "future-kind", name: "web" }),
+);
+expectType<Promise<boolean>>(
+  consul.config.set({
+    entry: { Kind: "future-kind", Name: "web", ArbitrarySetting: [1, 2] },
+  }),
+);
+const rawEntry: ConfigEntry = {
+  Kind: "service-defaults",
+  Name: "web",
+  NewServerField: true,
+};
+expectType<Promise<boolean>>(consul.config.set({ entry: rawEntry }));
+expectError(
+  consul.config.set({
+    entry: { Kind: "service-defaults", Name: "web", Protocol: "https" },
+  }),
+);
+expectError(
+  consul.config.set({
+    entry: { Kind: "service-defaults", Name: "web", Protocol: 123 },
+  }),
+);
+expectError(
+  consul.config.set({
+    entry: { Kind: "proxy-defaults", Name: "not-global" },
+  }),
+);
+expectError(
+  consul.config.set({
+    entry: {
+      Kind: "proxy-defaults",
+      Name: "global",
+      MeshGateway: { Mode: "invalid" },
+    },
+  }),
+);
+expectError<ServiceDefaultsEntry>({
+  Kind: "service-defaults",
+  Name: "web",
+  UpstreamConfig: { Overrides: [{ Protocol: "http" }] },
 });

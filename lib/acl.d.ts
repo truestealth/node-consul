@@ -1,4 +1,12 @@
 import { AclLegacy } from "./acl/legacy.js";
+import {
+  AclToken,
+  AclPolicy,
+  AclRole,
+  AclAuthMethod,
+  AclBindingRule,
+  AclTokenResult,
+} from "./acl/modern.js";
 import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 
 interface BootstrapOptions extends CommonOptions {
@@ -6,7 +14,7 @@ interface BootstrapOptions extends CommonOptions {
   bootstrapSecret?: string;
 }
 
-type BootstrapResult = any;
+type BootstrapResult = AclTokenResult;
 
 interface ReplicationOptions extends CommonOptions {
   dc?: string;
@@ -24,13 +32,29 @@ interface ReplicationResult {
   LastErrorMessage: string;
 }
 
+interface LoginOptions {
+  authMethod: string;
+  bearerToken: string;
+  meta?: Record<string, string>;
+}
+
 declare class Acl {
   constructor(consul: Consul);
 
   consul: Consul;
   legacy: AclLegacy;
+  token: AclToken;
+  policy: AclPolicy;
+  role: AclRole;
+  authMethod: AclAuthMethod;
+  bindingRule: AclBindingRule;
 
   static Legacy: typeof AclLegacy;
+  static Token: typeof AclToken;
+  static Policy: typeof AclPolicy;
+  static Role: typeof AclRole;
+  static AuthMethod: typeof AclAuthMethod;
+  static BindingRule: typeof AclBindingRule;
 
   bootstrap<TIncludeResponse extends boolean = false>(
     options?: BootstrapOptions & CommonOptions<TIncludeResponse>,
@@ -39,4 +63,12 @@ declare class Acl {
   replication<TIncludeResponse extends boolean = false>(
     options?: ReplicationOptions & CommonOptions<TIncludeResponse>,
   ): Promise<ResponseResult<ReplicationResult, TIncludeResponse>>;
+
+  login<TIncludeResponse extends boolean = false>(
+    options: LoginOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<AclTokenResult, TIncludeResponse>>;
+
+  logout<TIncludeResponse extends boolean = false>(
+    options?: CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<boolean, TIncludeResponse>>;
 }

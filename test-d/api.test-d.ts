@@ -5,6 +5,7 @@ import { expectType, expectError } from "tsd";
 import Consul from "../lib/index.js";
 import type { CommonOptions, QueryMeta, ResponseResult } from "../lib/index.js";
 import type { ReplicationResult } from "../lib/acl.js";
+import type { AclTokenResult } from "../lib/acl/modern.js";
 import type { InfoResult as AclInfoResult } from "../lib/acl/legacy.js";
 import type { ListResult as CheckListResult } from "../lib/agent/check.js";
 import type { ListResult as ServiceListResult } from "../lib/agent/service.js";
@@ -14,7 +15,10 @@ import type {
   InfoResult,
   CreateResult as SessionCreateResult,
 } from "../lib/session.js";
-import type { CreateResult as TransactionCreateResult } from "../lib/transaction.js";
+import type {
+  CreateResult as TransactionCreateResult,
+  Operation,
+} from "../lib/transaction.js";
 import type { FireResult } from "../lib/event.js";
 import type { Watch } from "../lib/watch.js";
 
@@ -63,12 +67,14 @@ expectType<Promise<[IncomingMessage, ReplicationResult]>>(
 const replication = await consul.acl.replication();
 expectType<"" | "policies" | "tokens">(replication.ReplicationType);
 expectError(replication.ReplicatedType);
-expectType<Promise<any>>(
+expectType<Promise<AclTokenResult>>(
   consul.acl.bootstrap({
     bootstrapSecret: "11111111-2222-4333-8444-555555555555",
   }),
 );
-expectType<Promise<[IncomingMessage, any]>>(consul.acl.bootstrap(common));
+expectType<Promise<[IncomingMessage, AclTokenResult]>>(
+  consul.acl.bootstrap(common),
+);
 expectType<Promise<[IncomingMessage, AclInfoResult?]>>(
   consul.acl.legacy.info({ id: "id", ...common }),
 );
@@ -237,7 +243,9 @@ expectType<Promise<[IncomingMessage, InfoResult[]]>>(
 expectType<Promise<[IncomingMessage, string]>>(consul.status.leader(common));
 expectType<Promise<[IncomingMessage, string[]]>>(consul.status.peers(common));
 
-const operations = [{ KV: { Verb: "set", Key: "key", Value: "dmFsdWU=" } }];
+const operations: Operation[] = [
+  { KV: { Verb: "set", Key: "key", Value: "dmFsdWU=" } },
+];
 expectType<Promise<TransactionCreateResult>>(
   consul.transaction.create(operations),
 );

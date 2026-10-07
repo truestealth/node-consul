@@ -20,10 +20,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         node-version: [24, 26]
 
     steps:
@@ -53,10 +54,14 @@ jobs:
         run: npm run package:check
 
   acceptance:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        consul-version: [1.22.7, 2.0.4]
     env:
-      CONSUL_VERSION: 2.0.4
+      CONSUL_VERSION: ${{ matrix.consul-version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -75,14 +80,19 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Consul
+        shell: bash
         run: |
+          case "$RUNNER_OS" in
+            Windows) platform=windows; executable=consul.exe ;;
+            Linux) platform=linux; executable=consul ;;
+          esac
           mkdir -p "$RUNNER_TEMP/consul"
           cd "$RUNNER_TEMP/consul"
-          curl --fail --silent --show-error --location --remote-name "https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip"
+          curl --fail --silent --show-error --location --remote-name "https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_${platform}_amd64.zip"
           curl --fail --silent --show-error --location --remote-name "https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_SHA256SUMS"
           sha256sum --check --ignore-missing "consul_${CONSUL_VERSION}_SHA256SUMS"
-          unzip "consul_${CONSUL_VERSION}_linux_amd64.zip"
-          echo "CONSUL_BIN=$RUNNER_TEMP/consul/consul" >> "$GITHUB_ENV"
+          unzip "consul_${CONSUL_VERSION}_${platform}_amd64.zip"
+          echo "CONSUL_BIN=$RUNNER_TEMP/consul/$executable" >> "$GITHUB_ENV"
 
       - name: Acceptance
         run: npm run acceptance

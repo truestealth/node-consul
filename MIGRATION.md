@@ -13,7 +13,7 @@ runs CI on Node.js 26.
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.0.1
+npm install @truestealth/consul@1.1.0
 ```
 
 Skip the uninstall command if you already use the scoped package. Update any
@@ -144,11 +144,26 @@ whole entry: preserve existing sources when editing and use CAS. L4 sources use
 compatible service protocol. See the [examples](README.md#config-entries) and
 [HashiCorp reference](https://developer.hashicorp.com/consul/docs/reference/config-entry/service-intentions).
 
+## Updating from 1.0.x to 1.1
+
+No transport or connection change is required. Modern ACL resources are additive;
+`acl.legacy` stays available where the server supports it. Use AccessorID for
+token resource operations, and SecretID for request authentication. Login does
+not change defaults. See the [ACL examples](README.md#modern-acls).
+
+Declarations now distinguish transaction operation verbs and required CAS/session
+fields. For stored arrays, use `TransactionOperation[]` or
+`satisfies TransactionOperation[]` instead of allowing `Verb` to widen to
+`string`. Transaction values stay base64 encoded. Config Entry types now infer
+`service-defaults` and `proxy-defaults`; other kinds remain available through
+`ConfigEntry`. These type checks do not change the request bodies sent to Consul.
+
 ## Verified scope and limits
 
 The inherited API does not cover every endpoint of every Consul version, and
 declarations are not a substitute for the server's configuration validation.
-Acceptance tests pass against Consul 2.0.4 Community. Mocks check transmission of
+Acceptance covers Consul 1.22.7 and 2.0.4 Community, including real ACL and mutual
+TLS scenarios. Mocks check transmission of
 Enterprise namespace and partition parameters only; Enterprise behavior requires
 testing against your own deployment.
 No Redis-backed resolver, DNS discovery, or scoring subsystem is added.

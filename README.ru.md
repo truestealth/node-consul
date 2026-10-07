@@ -9,15 +9,15 @@ Promise и типы TypeScript в самом пакете. Это самосто
 
 ## Что нужно для работы
 
-- **Node.js 24 или новее**. В CI проверяются версии 24 и 26. Состояние веток
+- **Node.js 24 или новее**. В CI проверяются 24 и 26 на Linux и Windows. Состояние веток
   можно сверить с [таблицей Node.js](https://nodejs.org/en/about/previous-releases).
 - Проект использует **нативный ESM**. Node.js 24 загружает тот же модуль через `require()`; отдельной CommonJS-сборки нет.
 - Runtime-зависимостей нет: запросы выполняются через стандартные `http` и
   `https` Node.js.
 - Для встроенных деклараций нужен **TypeScript 5 или новее**.
 
-Версия **1.0.1** объединяет новый HTTP-клиент, Config Entries и типы L4/L7 service
-intentions.
+В **1.1.0** добавлены актуальные ресурсы ACL и уточнены типы Config Entries и
+транзакций. Привычные разделы клиента и настройки подключения сохраняются.
 
 Если у вас стоит `consul@2.x` или `@truestealth/consul@0.1.x`, сначала прочитайте
 [инструкцию миграции](MIGRATION.ru.md): менять только номер версии недостаточно.
@@ -25,7 +25,7 @@ intentions.
 ## Первый запрос
 
 ```sh
-npm install @truestealth/consul@1.0.1
+npm install @truestealth/consul@1.1.0
 ```
 
 Пример можно сохранить в `.mjs`. Для обычных `.js` задайте `"type": "module"` в
@@ -254,21 +254,93 @@ const storedIntentions = await consul.config.get({
 конфигурацию проверяет сервер. Детали протокола, mesh и редакции Consul — в
 [справочнике service-intentions](https://developer.hashicorp.com/consul/docs/reference/config-entry/service-intentions).
 
+## Управление ACL
+
+Современный API находится в `acl.token`, `acl.policy`, `acl.role`,
+`acl.authMethod` и `acl.bindingRule`. В каждом разделе есть создание
+`create({ entry })`, обновление `update({ id, entry })`, чтение `get(id)`,
+список `list()` и удаление `del(id)`. Для auth methods идентификатор — `name`.
+Policy и role можно прочитать через `{ name }`. Для токенов также доступны
+`self()`, `clone(id)` и расширенное чтение `get({ id, expanded: true })`.
+
+Не смешивайте документ и параметры запроса: поля Consul помещаются в `entry`,
+а `token`, `dc`, `ns`, `partition`, `timeout` и `signal` — рядом с ним.
+Например, администратор может выдать временный доступ только к настройкам:
+
+```js
+const policy = await consul.acl.policy.create({
+  entry: {
+    Name: "example-settings-reader",
+    Rules: 'key_prefix "example/" { policy = "read" }',
+  },
+});
+const issued = await consul.acl.token.create({
+  entry: { Policies: [{ ID: policy.ID }], ExpirationTTL: "1h" },
+});
+try {
+  const item = await consul.kv.get({
+    key: "example/settings",
+    token: issued.SecretID,
+  });
+} finally {
+  await consul.acl.token.del(issued.AccessorID);
+}
+```
+
+Для управления токеном нужен **AccessorID**, для авторизации — **SecretID**.
+Не выводите `issued` или списки токенов в журнал: при достаточных правах список
+тоже может содержать секреты. Если ресурс не найден, чтение дает `undefined`;
+ошибка удаления отклоняет Promise. При обновлении клиент не объединяет старую
+и новую запись: сохраните необходимые grants самостоятельно.
+
+`acl.login({ authMethod, bearerToken, meta })` возвращает новый токен, но не
+меняет `defaults`. Передавайте его в нужных вызовах и отзывайте через
+`acl.logout({ token: issued.SecretID })`. Для входа заранее нужны auth method
+и binding rule; одного bootstrap недостаточно. Права и ограничения сервера
+описаны в [ACL API](https://developer.hashicorp.com/consul/api-docs/acl).
+
+## Типы конфигурации и транзакций
+
+Для `service-defaults`, `proxy-defaults` и `service-intentions` есть отдельные
+типы; `get/list` определяют результат по литералу `kind`. Остальные виды можно
+передавать через общий `ConfigEntry`. Для заранее подготовленных документов
+доступны `ServiceDefaultsEntry` и `ProxyDefaultsEntry`. Типы помогают поймать
+ошибку в коде, но окончательную конфигурацию проверяет Consul.
+
+Транзакции различают операции с KV, узлом, сервисом и check. Чтобы TypeScript
+не превратил сохраненный `Verb` в произвольную строку, аннотируйте массив:
+
+```ts
+import type { TransactionOperation } from "@truestealth/consul";
+
+const operations: TransactionOperation[] = [
+  { KV: { Verb: "set", Key: "example/settings", Value: "aGVsbG8=" } },
+  { KV: { Verb: "check-index", Key: "example/version", Index: 10 } },
+];
+const result = await consul.transaction.create(operations);
+```
+
+В транзакциях KV-значения передаются и возвращаются в **base64**; в отличие от
+`kv.get()`, автоматического декодирования здесь нет. Конфликт по-прежнему дает
+отклонение Promise с HTTP 409, а не boolean: подробности находятся в `Errors`
+тела ответа. `Results` и `Errors` могут быть `null`. Формат описан в
+[Transaction API](https://developer.hashicorp.com/consul/api-docs/txn).
+
 ## Другие разделы
 
 API не ограничивается KV. Сохраняются следующие разделы и способы вызова:
 
-| Раздел        | Примеры методов                                                             |
-| ------------- | --------------------------------------------------------------------------- |
-| `agent`       | `self()`, `members()`, `service.register()`, `check.register()`             |
-| `health`      | `node({ node })`, `service({ service, passing: true })`, `state({ state })` |
-| `catalog`     | `datacenters()`, `node.list()`, `service.nodes({ service })`                |
-| `session`     | `create()`, `renew({ id })`, `destroy({ id })`                              |
-| `query`       | `create()`, `get()`, `execute()`, `destroy()` для prepared queries          |
-| `event`       | `fire({ name, payload })`, `list()`                                         |
-| `status`      | `leader()`, `peers()`                                                       |
-| `transaction` | `create(operations)`                                                        |
-| `acl`         | `bootstrap()`, `replication()` и унаследованный раздел `legacy`             |
+| Раздел        | Примеры методов                                                                       |
+| ------------- | ------------------------------------------------------------------------------------- |
+| `agent`       | `self()`, `members()`, `service.register()`, `check.register()`                       |
+| `health`      | `node({ node })`, `service({ service, passing: true })`, `state({ state })`           |
+| `catalog`     | `datacenters()`, `node.list()`, `service.nodes({ service })`                          |
+| `session`     | `create()`, `renew({ id })`, `destroy({ id })`                                        |
+| `query`       | `create()`, `get()`, `execute()`, `destroy()` для prepared queries                    |
+| `event`       | `fire({ name, payload })`, `list()`                                                   |
+| `status`      | `leader()`, `peers()`                                                                 |
+| `transaction` | `create(operations)`                                                                  |
+| `acl`         | Современные ресурсы, `login()`, `logout()`, `bootstrap()`, `replication()` и `legacy` |
 
 Методы асинхронные и возвращают Promise. Параметры и результаты можно посмотреть
 в декларациях пакета; ограничения сервера и необходимые ACL описаны в
@@ -334,7 +406,8 @@ npm pack --dry-run
 на них проверяются TLS и отмена запросов. `npm run package:check` устанавливает
 реальный npm-архив без сети и проверяет импорт, HTTP-вызовы и типы NodeNext.
 
-Acceptance запускает три агента HashiCorp Consul на `127.0.0.1`–`127.0.0.3`.
+Acceptance запускает три агента Consul на `127.0.0.1`–`127.0.0.3`, а для ACL
+и TLS поднимает отдельные одноузловые окружения.
 Подготовьте эти loopback-адреса; если `consul` отсутствует в `PATH`, укажите путь
 к нему в `CONSUL_BIN`. После этого можно запускать `npm run acceptance`.
 Тестовый кластер включает Connect и использует BoltDB для Raft, чтобы работать
@@ -349,13 +422,12 @@ Acceptance запускает три агента HashiCorp Consul на `127.0.0
 недоверенные шаблоны инструментам разработки. Замечание остается открытым:
 несовместимая подмена зависимости ради чистого отчета не применяется.
 
-Проверки выпуска: на Node.js 24 и 26 проходят **303 runtime-теста**.
-Проверка покрытия на Node.js 24 дает 100% statements, branches, functions и lines.
-Проверки типов,
-установка и импорт из npm-архива также прошли. С HashiCorp Consul **2.0.4
-Community** пройдены **64 acceptance-теста**. Это не обещание совместимости со
-всеми версиями и редакциями сервера: унаследованные endpoint требуют его
-поддержки.
+CI запускает runtime-тесты с 100% coverage, проверки типов и установку архива
+на Node.js 24 и 26 под Linux и Windows. Acceptance проверяет **Consul 1.22.7
+и 2.0.4 Community**: в том числе CRUD с ACL, JWT-вход и отзыв токена, HTTPS
+с клиентскими сертификатами. Это не обещание работы с любым сервером:
+унаследованные endpoint зависят от его версии. Для Enterprise namespace и
+partition проверена передача параметров, но не поведение сервера.
 
 ## Происхождение и лицензии
 
