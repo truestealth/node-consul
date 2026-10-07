@@ -70,6 +70,27 @@ export interface QueryMeta {
   AddressTranslationEnabled?: boolean;
 }
 
+export interface ConsulLogData {
+  name: string;
+  method: string;
+  durationMs: number;
+  outcome:
+    | "success"
+    | "http-error"
+    | "abort"
+    | "timeout"
+    | "network-error"
+    | "codec-error"
+    | "validation-error"
+    | "error";
+  statusCode?: number;
+  errorCode?: string;
+}
+
+type ConsulListener<TEvent extends string | symbol> = TEvent extends "log"
+  ? (tags: string[], data: ConsulLogData) => void
+  : (...args: any[]) => void;
+
 export interface ConsulOptions extends Omit<
   RequestOptions,
   | "agent"
@@ -95,6 +116,35 @@ export interface ConsulOptions extends Omit<
 
 declare class Consul extends EventEmitter {
   constructor(options?: ConsulOptions);
+
+  on<TEvent extends string | symbol>(
+    event: TEvent,
+    listener: ConsulListener<NoInfer<TEvent>>,
+  ): this;
+  once<TEvent extends string | symbol>(
+    event: TEvent,
+    listener: ConsulListener<NoInfer<TEvent>>,
+  ): this;
+  addListener<TEvent extends string | symbol>(
+    event: TEvent,
+    listener: ConsulListener<NoInfer<TEvent>>,
+  ): this;
+  prependListener<TEvent extends string | symbol>(
+    event: TEvent,
+    listener: ConsulListener<NoInfer<TEvent>>,
+  ): this;
+  prependOnceListener<TEvent extends string | symbol>(
+    event: TEvent,
+    listener: ConsulListener<NoInfer<TEvent>>,
+  ): this;
+  removeListener<TEvent extends string | symbol>(
+    event: TEvent,
+    listener: ConsulListener<NoInfer<TEvent>>,
+  ): this;
+  off<TEvent extends string | symbol>(
+    event: TEvent,
+    listener: ConsulListener<NoInfer<TEvent>>,
+  ): this;
 
   acl: Acl;
   agent: Agent;

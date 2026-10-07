@@ -137,7 +137,7 @@ try {
     commonjsProbe,
     `
     import Consul = require('@truestealth/consul');
-    import type { Consul as ConsulInstance, CommonOptions, ConsulOptions, ConfigEntry, ServiceIntentionsEntry, TransactionOperation, TransactionCreateResult, AclTokenEntry, AclTokenResult } from '@truestealth/consul';
+    import type { Consul as ConsulInstance, CommonOptions, ConsulOptions, ConsulLogData, ConfigEntry, ServiceIntentionsEntry, TransactionOperation, TransactionCreateResult, AclTokenEntry, AclTokenResult } from '@truestealth/consul';
     const clientOptions: ConsulOptions = { host: 'localhost' };
     const consul: Consul = new Consul(clientOptions);
     const instance: ConsulInstance = consul;
@@ -149,6 +149,7 @@ try {
     const transaction: Promise<TransactionCreateResult> = consul.transaction.create(operations);
     const tokenEntry: AclTokenEntry = { Description: 'consul-smoke-token' };
     const token: Promise<AclTokenResult> = consul.acl.token.create({ entry: tokenEntry });
+    consul.on('log', (_tags, data: ConsulLogData) => data.outcome);
     consul.destroy();
   `,
   );

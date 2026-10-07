@@ -126,9 +126,92 @@ describe("Native HTTP transport", function () {
     const logs = [];
     instance.on("log", (...args) => logs.push(args));
     await instance.kv.get("example/key");
-    assert.ok(logs.length > 0);
+    assert.equal(logs.length, 1);
+    const [tags, data] = logs[0];
+    assert.deepEqual(tags, ["consul", "response"]);
+    assert.equal(data.name, "kv.get");
+    assert.equal(data.method, "GET");
+    assert.equal(data.outcome, "success");
+    assert.equal(data.statusCode, 200);
+    assert.ok(Number.isFinite(data.durationMs) && data.durationMs >= 0);
     assert.equal(JSON.stringify(logs).includes("private-value"), false);
     assert.equal(JSON.stringify(logs).includes("private-token"), false);
+    assert.equal(JSON.stringify(logs).includes("example/key"), false);
+  });
+
+  it("reports terminal outcomes once without secret contents", async function () {
+    const server = await listen((request, response) => {
+      if (request.url.includes("missing")) return response.writeHead(404).end();
+      if (request.url.includes("denied")) {
+        response.writeHead(403, { "content-type": "text/plain" });
+        return response.end("private-denial-reason");
+      }
+      if (request.url.includes("codec")) {
+        response.setHeader("content-type", "application/json");
+        return response.end("{private-invalid-value");
+      }
+      if (request.url.includes("reset")) return request.socket.destroy();
+      if (request.url.includes("timeout")) return;
+      json(response, "leader");
+    });
+    const instance = client({
+      baseUrl:
+        "http://private-user:private-password@127.0.0.1:" +
+        server.address().port +
+        "/v1",
+      defaults: { token: "private-token" },
+    });
+    const logs = [];
+    instance.on("log", (tags, data) => logs.push({ tags, data }));
+    assert.equal(await instance.kv.get("missing"), undefined);
+    for (const path of ["denied", "codec", "reset", "timeout"]) {
+      await assert.rejects(
+        instance._get(
+          {
+            name: "diagnostic",
+            path: "/" + path,
+            timeout: path === "timeout" ? 30 : 1000,
+          },
+          utils.body,
+        ),
+      );
+    }
+    const signal = AbortSignal.abort(new Error("private-abort-reason"));
+    await assert.rejects(instance.status.leader({ signal }));
+    await assert.rejects(instance.status.leader({ timeout: -1 }));
+    await assert.rejects(
+      instance._get({ path: "/callback" }, (_request, next) =>
+        next(new Error("private-callback-reason")),
+      ),
+    );
+    assert.deepEqual(
+      logs.map(({ data }) => data.outcome),
+      [
+        "success",
+        "http-error",
+        "codec-error",
+        "network-error",
+        "timeout",
+        "abort",
+        "validation-error",
+        "error",
+      ],
+    );
+    assert.deepEqual(
+      logs.map(({ data }) => data.statusCode),
+      [404, 403, 200, undefined, undefined, undefined, undefined, 200],
+    );
+    for (const { tags, data } of logs) {
+      assert.deepEqual(tags, [
+        "consul",
+        data.statusCode === undefined ? "error" : "response",
+      ]);
+      assert.equal(data.method, "GET");
+      assert.ok(Number.isFinite(data.durationMs) && data.durationMs >= 0);
+    }
+    assert.equal(logs[4].data.errorCode, "ETIMEDOUT");
+    assert.equal(logs[5].data.errorCode, "ABORT_ERR");
+    assert.equal(JSON.stringify(logs).includes("private-"), false);
   });
 
   it("accepts a URL base, preserves its path, and sends basic authentication", async function () {
@@ -530,6 +613,81 @@ describe("Native HTTP transport", function () {
     await assert.rejects(instance.kv.set("example/key", "value"));
     await delay(30);
     assert.equal(requests, 1);
+    assert.equal(instance._requests.size, 0);
+  });
+
+  it("rejects a truncated response once and preserves its HTTP status", async function () {
+    let responses = 0;
+    const server = await listen((request, response) => {
+      responses += 1;
+      if (responses === 1) {
+        response.writeHead(200, {
+          "content-type": "application/json",
+          "content-length": "100",
+        });
+        response.write("{unfinished");
+        setImmediate(() => response.destroy());
+      } else {
+        json(response, "leader");
+      }
+    });
+    const instance = createClient(server);
+    const controller = new AbortController();
+    const ctx = new EventEmitter();
+    const logs = [];
+    instance.on("log", (tags, data) => logs.push(data));
+    await assert.rejects(
+      instance.status.leader({ ctx, signal: controller.signal }),
+      (error) => {
+        assert.equal(error.code, "ECONNRESET");
+        assert.equal(error.response.statusCode, 200);
+        return true;
+      },
+    );
+    assert.equal(instance._requests.size, 0);
+    assert.equal(ctx.listenerCount("cancel"), 0);
+    assert.equal(getEventListeners(controller.signal, "abort").length, 0);
+    assert.equal(logs.length, 1);
+    assert.equal(logs[0].statusCode, 200);
+    assert.equal(logs[0].outcome, "network-error");
+    assert.equal(await instance.status.leader(), "leader");
+    assert.equal(responses, 2);
+  });
+
+  it("aborts a queued request without blocking a caller-owned limited agent", async function () {
+    const paths = [];
+    let releaseFirst;
+    const server = await listen((request, response) => {
+      paths.push(request.url);
+      if (paths.length === 1) {
+        releaseFirst = () => json(response, [{ Value: "Zmlyc3Q=" }]);
+      } else {
+        json(response, [{ Value: "bmV4dA==" }]);
+      }
+    });
+    const agent = new http.Agent({ keepAlive: true, maxSockets: 1 });
+    agents.push(agent);
+    const instance = createClient(server, { agent });
+    const received = once(server, "request");
+    const first = instance.kv.get("first");
+    await received;
+    const controller = new AbortController();
+    const ctx = new EventEmitter();
+    const queued = instance.kv.get({
+      key: "cancelled",
+      signal: controller.signal,
+      ctx,
+    });
+    const rejected = assert.rejects(queued, { code: "ABORT_ERR" });
+    controller.abort();
+    await rejected;
+    assert.equal(getEventListeners(controller.signal, "abort").length, 0);
+    assert.equal(ctx.listenerCount("cancel"), 0);
+    const next = instance.kv.get("next");
+    releaseFirst();
+    assert.equal((await first).Value, "first");
+    assert.equal((await next).Value, "next");
+    assert.deepEqual(paths, ["/v1/kv/first", "/v1/kv/next"]);
     assert.equal(instance._requests.size, 0);
   });
 

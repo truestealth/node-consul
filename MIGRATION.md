@@ -13,7 +13,7 @@ runs CI on Node.js 26.
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.1.0
+npm install @truestealth/consul@1.2.0
 ```
 
 Skip the uninstall command if you already use the scoped package. Update any
@@ -71,6 +71,11 @@ Use TypeScript 5.4 or newer. For a Node.js application, use `module: "NodeNext"`
 CommonJS `.cts` sources can use `import Consul = require("@truestealth/consul")`.
 Declarations are shipped alongside the source; no separate
 `@types/consul` package is needed.
+
+Jest has its own module loader. For CommonJS tests that load this package, use
+Node.js 24.9+ and a current Jest release with `require(ESM)` support; enable
+`--experimental-vm-modules` as described in the
+[Jest ESM guide](https://jestjs.io/docs/ecmascript-modules#require-of-esm).
 
 The package's `exports` map defines the supported entry point. Imports such as
 `@truestealth/consul/lib/kv` are not supported public API.
@@ -157,6 +162,17 @@ fields. For stored arrays, use `TransactionOperation[]` or
 `string`. Transaction values stay base64 encoded. Config Entry types now infer
 `service-defaults` and `proxy-defaults`; other kinds remain available through
 `ConfigEntry`. These type checks do not change the request bodies sent to Consul.
+
+## Updating from 1.1.x to 1.2
+
+Watch pacing and backoff jitter are disabled by default, so existing watch
+timing is unchanged. Opt into `rateLimit` and `backoffJitter` where a busy
+key would otherwise cause rapid blocking-query loops. Pacing can coalesce
+intermediate states; it is not a durable change log.
+
+`log` emits one completion event per transport request with typed, sanitized metadata.
+Use documented fields rather than URLs, payloads or error messages. HTTP
+response/error tags are retained. Typed event overloads require TypeScript 5.4+.
 
 ## Verified scope and limits
 

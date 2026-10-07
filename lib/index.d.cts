@@ -8,6 +8,7 @@ declare namespace Consul {
   type CommonOptions<TIncludeResponse extends boolean = boolean> =
     Types.CommonOptions<TIncludeResponse>;
   type ConsulOptions = Types.ConsulOptions;
+  type ConsulLogData = Types.ConsulLogData;
   type QueryMeta = Types.QueryMeta;
   type ResponseResult<
     TData,

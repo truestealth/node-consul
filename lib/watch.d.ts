@@ -6,7 +6,9 @@ interface WatchOptions extends CommonOptions {
   options?: CommonOptions & Record<string, unknown>;
   backoffFactor?: number;
   backoffMax?: number;
+  backoffJitter?: boolean;
   maxAttempts?: number;
+  rateLimit?: number;
 }
 
 declare class Watch extends EventEmitter {

@@ -14,8 +14,9 @@ HashiCorp client.
 - No runtime dependencies: requests use Node.js `http` and `https`.
 - TypeScript **5.4 or newer** when using the included declarations.
 
-Version **1.1.0** adds modern ACL resources and precise Config Entry and
-transaction declarations. Existing client sections and connection options remain.
+Version **1.2.0** adds opt-in watch pacing and safe request diagnostics to the
+modern ACL API and typed Config Entry/transaction contracts. Existing connection
+options and default watch timing remain unchanged.
 
 Moving from `consul@2.x`? Start with the
 [migration guide](MIGRATION.md).
@@ -23,7 +24,7 @@ Moving from `consul@2.x`? Start with the
 ## Get started
 
 ```sh
-npm install @truestealth/consul@1.1.0
+npm install @truestealth/consul@1.2.0
 ```
 
 Use an `.mjs` file or set `"type": "module"` in your application's `package.json`:
@@ -290,6 +291,9 @@ required permissions and server-version restrictions.
 Consul can return 403 rather than 404 for a deleted or unknown ACL token.
 These responses remain errors, including logout after revocation.
 
+Deleting an auth method also removes its binding rules and login-issued tokens
+on the Consul server. Treat this as credential revocation, not just cleanup.
+
 ## Typed configuration and transactions
 
 `service-defaults`, `proxy-defaults`, and `service-intentions` have dedicated
@@ -348,6 +352,8 @@ const watch = consul.watch({
   options: { key: "example/greeting", wait: "30s" },
   backoffFactor: 1000,
   backoffMax: 30000,
+  rateLimit: 15000,
+  backoffJitter: true,
   maxAttempts: 5,
 });
 
@@ -373,9 +379,44 @@ The legacy EventEmitter `ctx` with a `"cancel"` event remains supported.
 for a missing result the second tuple element may be absent. The response is a
 Node.js `IncomingMessage`.
 
+Watch pacing is **opt-in**: `rateLimit` defaults to `0` (disabled). A value of
+`15000` allows two immediate queries, then refills one request every 15 seconds
+under sustained change. A long poll resumes without an extra delay once its
+budget has refilled. Intermediate changes can be coalesced while paced.
+Error retries retain exponential backoff; `backoffJitter: true` chooses a delay
+between half and all of the calculated backoff. Jitter defaults to `false`.
+Stopping the watch, destroying the client or aborting its signal cancels both
+the active query and any pacing/retry timer.
+
 Ordinary requests are never retried automatically, including writes. A network
 failure does not prove a write was rejected by Consul; reconcile the result or
 use CAS rather than blindly resubmitting a non-idempotent operation.
+
+## Request diagnostics
+
+The existing `log` event provides timing and outcomes without request contents.
+Each request submitted to the transport emits one completion event:
+
+```ts
+import type { ConsulLogData } from "@truestealth/consul";
+
+consul.on("log", (tags: string[], data: ConsulLogData) => {
+  console.info(tags, data);
+});
+```
+
+Metadata includes `name`, `method`, `durationMs`, `outcome`, and optional
+`statusCode`/`errorCode`. Timing includes waiting in an Agent queue. Outcomes
+distinguish success, HTTP, network, codec and validation failures, timeout and
+abort. A missing KV key is a successful normalized result with status 404.
+Response tags remain `["consul", "response"]` when an HTTP response is known;
+failures without a response use `["consul", "error"]`.
+URLs, keys, headers, bodies, credentials and error messages are deliberately
+omitted. Keep listeners lightweight: throwing retains normal EventEmitter
+behavior rather than being silently ignored.
+
+Endpoint parameter validation can reject before submitting a request; those
+failures do not emit a transport event.
 
 ## Development
 

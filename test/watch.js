@@ -1,3 +1,5 @@
+import assert from "node:assert/strict";
+import { performance } from "node:perf_hooks";
 import should from "should";
 
 import * as helper from "./helper.js";
@@ -195,6 +197,140 @@ describe("Watch", function () {
     should(() => {
       this.consul.watch({});
     }).throw("method required");
+  });
+
+  it("validates rate-limit and retry-jitter settings", function () {
+    const method = async () => null;
+    for (const rateLimit of [-1, NaN, Infinity, "15s"]) {
+      assert.throws(
+        () => this.consul.watch({ method, rateLimit }),
+        /rateLimit must be a nonnegative number/,
+      );
+    }
+    assert.throws(
+      () => this.consul.watch({ method, backoffJitter: 0.5 }),
+      /backoffJitter must be a boolean/,
+    );
+  });
+
+  it("allows two immediate deliveries before limiting rapid queries", async function () {
+    const clock = this.sinon.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout"],
+    });
+    this.sinon.stub(performance, "now").callsFake(() => clock.now);
+    let calls = 0;
+    const watch = this.consul.watch({
+      rateLimit: 100,
+      method: async () => [
+        { headers: { "x-consul-index": String(++calls) } },
+        calls,
+      ],
+    });
+    try {
+      await clock.tickAsync(0);
+      assert.equal(calls, 2);
+      await clock.tickAsync(99);
+      assert.equal(calls, 2);
+      await clock.tickAsync(1);
+      assert.equal(calls, 3);
+      watch.end();
+      assert.equal(clock.countTimers(), 0);
+      await clock.tickAsync(1000);
+      assert.equal(calls, 3);
+    } finally {
+      watch.end();
+    }
+  });
+
+  it("refills its burst without delaying normal blocking responses", async function () {
+    const clock = this.sinon.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout"],
+    });
+    this.sinon.stub(performance, "now").callsFake(() => clock.now);
+    let calls = 0;
+    let resolveResponse;
+    const watch = this.consul.watch({
+      rateLimit: 100,
+      method: () => {
+        calls += 1;
+        return new Promise((resolve) => {
+          resolveResponse = resolve;
+        });
+      },
+    });
+    try {
+      await clock.tickAsync(0);
+      assert.equal(calls, 1);
+      for (const index of ["1", "2", "3"]) {
+        await clock.tickAsync(200);
+        resolveResponse([{ headers: { "x-consul-index": index } }, index]);
+        await clock.tickAsync(0);
+        assert.equal(calls, Number(index) + 1);
+        assert.equal(clock.countTimers(), 0);
+      }
+    } finally {
+      watch.end();
+    }
+  });
+
+  it("preserves retry delays when rate limiting is enabled", async function () {
+    const clock = this.sinon.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout"],
+    });
+    this.sinon.stub(performance, "now").callsFake(() => clock.now);
+    let calls = 0;
+    const watch = this.consul.watch({
+      rateLimit: 15000,
+      method: async () => {
+        calls += 1;
+        throw new Error("example failure");
+      },
+    });
+    watch.on("error", () => {});
+    try {
+      await clock.tickAsync(0);
+      assert.equal(calls, 1);
+      await clock.tickAsync(200);
+      assert.equal(calls, 2);
+      await clock.tickAsync(400);
+      assert.equal(calls, 3);
+    } finally {
+      watch.end();
+    }
+  });
+
+  it("randomizes opted-in retries within half and full backoff", async function () {
+    const clock = this.sinon.useFakeTimers({
+      toFake: ["setTimeout", "clearTimeout"],
+    });
+    const random = this.sinon.stub(Math, "random");
+    random.onFirstCall().returns(0);
+    random.onSecondCall().returns(1);
+    this.sinon.stub(performance, "now").callsFake(() => clock.now);
+    let calls = 0;
+    const watch = this.consul.watch({
+      backoffJitter: true,
+      backoffMax: 200,
+      method: async () => {
+        calls += 1;
+        throw new Error("example failure");
+      },
+    });
+    watch.on("error", () => {});
+    try {
+      await clock.tickAsync(0);
+      assert.equal(calls, 1);
+      await clock.tickAsync(99);
+      assert.equal(calls, 1);
+      await clock.tickAsync(1);
+      assert.equal(calls, 2);
+      await clock.tickAsync(199);
+      assert.equal(calls, 2);
+      await clock.tickAsync(1);
+      assert.equal(calls, 3);
+    } finally {
+      watch.end();
+    }
   });
 
   it("should set timeout correctly", async function () {

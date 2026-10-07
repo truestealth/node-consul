@@ -2,6 +2,7 @@ export { Consul as default, Consul } from "./consul.js";
 export type {
   CommonOptions,
   ConsulOptions,
+  ConsulLogData,
   QueryMeta,
   ResponseResult,
 } from "./consul.js";
