@@ -10,11 +10,11 @@ HashiCorp client.
 
 - Node.js **24 or newer**. CI covers Node.js 24 and 26; see the
   [Node.js release schedule](https://nodejs.org/en/about/previous-releases).
-- Native **ES modules only**. There is no separate CommonJS build.
+- Native **ES modules only**. Node.js 24 also loads the same module through `require()`; there is no separate CommonJS build.
 - No runtime dependencies: requests use Node.js `http` and `https`.
 - TypeScript **5 or newer** when using the included declarations.
 
-Version **1.0.0** combines the native HTTP client with Config Entries and typed
+Version **1.0.1** combines the native HTTP client with Config Entries and typed
 L4/L7 service intentions.
 
 Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
@@ -23,7 +23,7 @@ Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
 ## Get started
 
 ```sh
-npm install @truestealth/consul@1.0.0
+npm install @truestealth/consul@1.0.1
 ```
 
 Use an `.mjs` file or set `"type": "module"` in your application's `package.json`:
@@ -337,7 +337,7 @@ runtime npm package, and Consul API inputs are not evaluated as glob patterns.
 Do not pass untrusted patterns to the development tools; the finding remains
 open rather than being hidden by an incompatible override.
 
-Release verification on 2026-10-07: **300 runtime tests** pass on Node.js 24 and 26. The Node.js 24 coverage check reports 100% statements, branches, functions,
+Release verification: **303 runtime tests** pass on Node.js 24 and 26. The Node.js 24 coverage check reports 100% statements, branches, functions,
 and lines. Type checks and
 fresh archive-install/import checks pass. **64 acceptance tests** pass against
 HashiCorp Consul **2.0.4 Community**. This does not establish compatibility with

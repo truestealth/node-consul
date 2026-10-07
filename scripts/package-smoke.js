@@ -85,8 +85,8 @@ try {
   assert.equal(installed.engines.node, ">=24");
   assert.equal(installed.version, archive.version);
   assert.deepEqual(Object.keys(installed.dependencies || {}), []);
-  assert.equal(installed.exports["."].import, "./lib/index.js");
-  assert.equal(installed.exports["."].require, undefined);
+  assert.equal(installed.exports["."].import.default, "./lib/index.js");
+  assert.equal(installed.exports["."].require.default, "./lib/commonjs.mjs");
   const smoke = `
     import assert from 'node:assert/strict';
     import http from 'node:http';
@@ -127,11 +127,21 @@ try {
     [
       "--input-type=commonjs",
       "--eval",
-      "const assert = require('node:assert/strict'); assert.throws(() => require('@truestealth/consul'), { code: 'ERR_PACKAGE_PATH_NOT_EXPORTED' });",
+      "const assert = require('node:assert/strict'); const Consul = require('@truestealth/consul'); const client = new Consul(); client.destroy(); import('@truestealth/consul').then((module) => { assert.equal(Consul, module.default); assert.equal(Consul, module.Consul); });",
     ],
     { ...options, cwd: consumer },
   );
   const probe = join(consumer, "consumer.mts");
+  const commonjsProbe = join(consumer, "consumer.cts");
+  await writeFile(
+    commonjsProbe,
+    `
+    import Consul = require('@truestealth/consul');
+    const consul = new Consul({ host: 'localhost' });
+    const value: Promise<string[]> = consul.kv.keys('consul-smoke-prefix');
+    consul.destroy();
+  `,
+  );
   await writeFile(
     probe,
     `
@@ -146,7 +156,7 @@ try {
   );
   const tsdRequire = createRequire(import.meta.resolve("tsd"));
   const typescript = tsdRequire("@tsd/typescript");
-  const program = typescript.createProgram([probe], {
+  const program = typescript.createProgram([probe, commonjsProbe], {
     strict: true,
     noEmit: true,
     module: typescript.ModuleKind.NodeNext,
@@ -167,7 +177,7 @@ try {
   console.log(
     "Package archive: " +
       files.length +
-      " public files; offline install, ESM, CommonJS guard, HTTP and NodeNext types passed.",
+      " public files; offline install, ESM, native CommonJS loading, HTTP and NodeNext types passed.",
   );
 } finally {
   await rm(directory, { recursive: true, force: true });

@@ -1,14 +1,20 @@
 {
   "name": "@truestealth/consul",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Dependency-free ESM client for the HashiCorp Consul HTTP API",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "exports": {
     ".": {
-      "types": "./lib/index.d.ts",
-      "import": "./lib/index.js"
+      "import": {
+        "types": "./lib/index.d.ts",
+        "default": "./lib/index.js"
+      },
+      "require": {
+        "types": "./lib/index.d.cts",
+        "default": "./lib/commonjs.mjs"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -43,7 +49,7 @@
   },
   "scripts": {
     "format": "prettier -w lib test test-d scripts .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto",
-    "test": "jshint lib test && prettier -c lib test test-d scripts .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto && c8 --all --include=lib/**/*.js --check-coverage --100 mocha --recursive --check-leaks",
+    "test": "node --check lib/commonjs.mjs && jshint lib test && prettier -c lib test test-d scripts .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto && c8 --all --include=lib/**/*.js --check-coverage --100 mocha --recursive --check-leaks",
     "types": "tsd",
     "package:check": "node scripts/package-smoke.js",
     "acceptance": "node scripts/acceptance.js",

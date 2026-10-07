@@ -289,6 +289,21 @@ describe("Agent", function () {
         await this.consul.agent.service.register("service");
       });
 
+      it("registers a TTL service check without a check name", async function () {
+        this.nock
+          .put("/v1/agent/service/register", {
+            Name: "consul-smoke-service",
+            Check: { TTL: "30s", DeregisterCriticalServiceAfter: "1m" },
+          })
+          .reply(200);
+
+        const result = await this.consul.agent.service.register({
+          name: "consul-smoke-service",
+          check: { ttl: "30s", deregistercriticalserviceafter: "1m" },
+        });
+        should(result).equal(undefined);
+      });
+
       it("should require valid check", async function () {
         try {
           await this.consul.agent.service.register({

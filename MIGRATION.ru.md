@@ -13,7 +13,7 @@
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.0.0
+npm install @truestealth/consul@1.0.1
 ```
 
 Если scoped-пакет уже используется, удалять `consul` не требуется. Проверьте
@@ -40,8 +40,18 @@ const consul = new Consul();
 области действия package, а не только файл с клиентом: проверьте конфиги,
 скрипты и тесты. Файлы, которым еще нужен CommonJS, переименуйте в `.cjs`.
 
-Если весь проект переводить на ESM пока рано, используйте асинхронный импорт
-внутри существующего CommonJS-кода:
+С версии 1.0.1 можно сохранить CommonJS-приложение на Node.js 24 и подключить
+клиент привычным способом:
+
+```js
+const Consul = require("@truestealth/consul");
+const consul = new Consul();
+```
+
+Этот entry point возвращает тот же конструктор, что и default import. Работает
+нативная загрузка ESM в Node.js, отдельная CommonJS-сборка не создается. Default
+imports TypeScript, скомпилированные в CommonJS, также поддерживаются. Если
+инициализация приложения уже асинхронная, можно оставить динамический импорт:
 
 ```js
 async function start() {
@@ -55,17 +65,16 @@ async function start() {
 }
 ```
 
-Не рассчитывайте на прежний результат `require()` — конструктор напрямую.
-Отдельной CommonJS-сборки нет. Подключайте корень пакета, а не внутренние файлы
+Подключайте корень пакета, а не внутренние файлы
 `lib/`: доступные entry points закреплены в `exports`.
 
 ## Настройки TypeScript
 
 Нужен TypeScript 5 или новее. Для Node.js задайте `module: "NodeNext"` и
 `moduleResolution: "NodeNext"`.
-Исходники приложения должны определяться как ESM: через package с
-`"type": "module"` или расширение `.mts`. Вместо
-`import Consul = require("consul")` используйте default import из примера выше.
+Для ESM используйте package с `"type": "module"` или расширение `.mts`.
+В CommonJS-файлах `.cts` доступно
+`import Consul = require("@truestealth/consul")`.
 Типы уже входят в клиент; отдельный `@types/consul` не нужен.
 
 ## Что проверить в своем коде

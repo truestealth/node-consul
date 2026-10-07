@@ -13,7 +13,7 @@ runs CI on Node.js 26.
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.0.0
+npm install @truestealth/consul@1.0.1
 ```
 
 Skip the uninstall command if you already use the scoped package. Update any
@@ -39,9 +39,18 @@ Use `.mjs` files or set `"type": "module"` in the application package. Adding th
 field changes the interpretation of every `.js` file in its scope, including
 configuration and test files; use `.cjs` for files that must stay CommonJS.
 
-There is only one package implementation, written as ES modules. Do not rely on
-`require()` returning the constructor or import internal `lib/` paths. A
-CommonJS application can load the public entry point asynchronously:
+There is one implementation, written as ES modules. Starting with 1.0.1, Node.js
+24 can also load it synchronously from CommonJS:
+
+```js
+const Consul = require("@truestealth/consul");
+const consul = new Consul();
+```
+
+The CommonJS entry point returns the same constructor as the ESM default export.
+It uses Node.js's native ESM loader and adds no separate CommonJS build. Existing
+TypeScript default imports compiled to CommonJS continue to work on Node.js 24.
+An asynchronous import remains available:
 
 ```js
 async function start() {
@@ -58,9 +67,9 @@ async function start() {
 ## 3. Adjust TypeScript's module resolution
 
 Use TypeScript 5 or newer. For a Node.js application, use `module: "NodeNext"` and
-`moduleResolution: "NodeNext"`. Your TypeScript sources must belong to an ESM
-package, or use `.mts`. Replace `import Consul = require("consul")` with the
-default import above. Declarations are shipped alongside the source; no separate
+`moduleResolution: "NodeNext"`. Use `.mts` or an ESM package for default imports;
+CommonJS `.cts` sources can use `import Consul = require("@truestealth/consul")`.
+Declarations are shipped alongside the source; no separate
 `@types/consul` package is needed.
 
 The package's `exports` map defines the supported entry point. Imports such as

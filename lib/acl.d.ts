@@ -3,6 +3,7 @@ import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 
 interface BootstrapOptions extends CommonOptions {
   bootstrapsecret?: string;
+  bootstrapSecret?: string;
 }
 
 type BootstrapResult = any;
@@ -15,7 +16,7 @@ interface ReplicationResult {
   Enabled: boolean;
   Running: boolean;
   SourceDatacenter: string;
-  ReplicatedType: "policies" | "tokens";
+  ReplicationType: "" | "policies" | "tokens";
   ReplicatedIndex: number;
   ReplicatedTokenIndex: number;
   LastSuccess: string;

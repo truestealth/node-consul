@@ -60,6 +60,14 @@ const common = { ctx, signal: new AbortController().signal, timeout: "1s" };
 expectType<Promise<[IncomingMessage, ReplicationResult]>>(
   consul.acl.replication(common),
 );
+const replication = await consul.acl.replication();
+expectType<"" | "policies" | "tokens">(replication.ReplicationType);
+expectError(replication.ReplicatedType);
+expectType<Promise<any>>(
+  consul.acl.bootstrap({
+    bootstrapSecret: "11111111-2222-4333-8444-555555555555",
+  }),
+);
 expectType<Promise<[IncomingMessage, any]>>(consul.acl.bootstrap(common));
 expectType<Promise<[IncomingMessage, AclInfoResult?]>>(
   consul.acl.legacy.info({ id: "id", ...common }),
@@ -105,6 +113,19 @@ expectType<Promise<[IncomingMessage, ServiceListResult]>>(
 expectType<Promise<[IncomingMessage]>>(
   consul.agent.service.register({ name: "service", ...common }),
 );
+expectType<Promise<undefined>>(
+  consul.agent.service.register({
+    name: "consul-smoke-service",
+    check: { ttl: "30s", deregistercriticalserviceafter: "1m" },
+  }),
+);
+expectType<Promise<undefined>>(
+  consul.agent.service.register({
+    name: "consul-smoke-service",
+    checks: [{ ttl: "30s" }, { name: "named check", ttl: "30s" }],
+  }),
+);
+expectError(consul.agent.check.register({ ttl: "30s" }));
 expectType<Promise<[IncomingMessage]>>(
   consul.agent.service.deregister({ id: "id", ...common }),
 );

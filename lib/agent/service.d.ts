@@ -13,6 +13,10 @@ interface RegisterConnect {
   sidecarservice: Record<string, any>;
 }
 
+export type ServiceCheckOptions = Omit<CheckOptions, "name"> & {
+  name?: string;
+};
+
 interface RegisterOptions extends CommonOptions {
   name: string;
   id?: string;
@@ -25,8 +29,8 @@ interface RegisterOptions extends CommonOptions {
   kind?: string;
   proxy?: any;
   connect?: RegisterConnect;
-  check?: CheckOptions;
-  checks?: CheckOptions[];
+  check?: ServiceCheckOptions;
+  checks?: ServiceCheckOptions[];
 }
 
 type RegisterResult = undefined;

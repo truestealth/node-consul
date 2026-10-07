@@ -13,6 +13,16 @@ describe("Acl", function () {
       should(data).eql({ ok: true });
     });
 
+    it("passes an explicitly provided bootstrap secret to Consul", async function () {
+      const secret = "11111111-2222-4333-8444-555555555555";
+      this.nock
+        .put("/v1/acl/bootstrap", { BootstrapSecret: secret })
+        .reply(200, { AccessorID: "accessor", SecretID: secret });
+
+      const data = await this.consul.acl.bootstrap({ bootstrapSecret: secret });
+      should(data.SecretID).equal(secret);
+    });
+
     describe("legacy", function () {
       describe("create", function () {
         it("should work", async function () {
@@ -197,6 +207,24 @@ describe("Acl", function () {
   });
 
   describe("replication", function () {
+    it("preserves the documented replication status fields", async function () {
+      const status = {
+        Enabled: true,
+        Running: true,
+        SourceDatacenter: "dc1",
+        ReplicationType: "tokens",
+        ReplicatedIndex: 12,
+        ReplicatedTokenIndex: 14,
+        LastSuccess: "2026-10-07T00:00:00Z",
+        LastError: "0001-01-01T00:00:00Z",
+        LastErrorMessage: "",
+      };
+      this.nock.get("/v1/acl/replication").reply(200, status);
+
+      const data = await this.consul.acl.replication();
+      should(data).eql(status);
+    });
+
     it("should work", async function () {
       this.nock.get("/v1/acl/replication?dc=dc1").reply(200, [{ ok: true }]);
 
