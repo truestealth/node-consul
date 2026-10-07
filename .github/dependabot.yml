@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:17"
+      timezone: Etc/UTC
+    groups:
+      development-tools:
+        dependency-type: development
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:17"
+      timezone: Etc/UTC
+    groups:
+      actions:
+        patterns: ["*"]
+        update-types: [minor, patch]

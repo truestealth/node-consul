@@ -14,8 +14,8 @@ HashiCorp client.
 - No runtime dependencies: requests use Node.js `http` and `https`.
 - TypeScript **5.4 or newer** when using the included declarations.
 
-Version **1.2.2** updates the development toolchain to pnpm 12 and validates the
-npm archive with npm 12 before publication. It retains
+Version **1.3.0** adds weekly dependency checks and CI coverage for supported
+TypeScript compilers. It retains
 the modern ACL API, typed Config Entry/transaction contracts, opt-in watch pacing
 and safe request diagnostics introduced in earlier releases.
 
@@ -25,7 +25,7 @@ Moving from `consul@2.x`? Start with the
 ## Get started
 
 ```sh
-npm install @truestealth/consul@1.2.2
+npm install @truestealth/consul@1.3.0
 ```
 
 Use an `.mjs` file or set `"type": "module"` in your application's `package.json`:
@@ -431,6 +431,7 @@ npm test
 npm run lint
 npm run types
 npm run package:check
+pnpm audit --audit-level=high
 git diff --check
 npm pack --dry-run
 ```
@@ -443,6 +444,15 @@ ESLint checks JavaScript, Prettier checks formatting, and assertions use
 `node:assert/strict`. Type tests use the TypeScript CLI and `expect-type` to check
 inferred results and reject invalid calls; archive consumers use the compiler
 CLI as well.
+
+CI compiles the type tests and packed ESM/CommonJS consumers with TypeScript
+5.4.5, 5.9.3 and the development compiler pinned in the lockfile (currently
+7.0.2). Node.js declarations stay on the 24.x line to match the minimum runtime.
+
+Dependabot checks development dependencies and SHA-pinned GitHub Actions weekly.
+Minor and patch updates are grouped; major updates remain separate proposals.
+Updates need review and are not automatically merged. The weekly CI run also
+audits the complete dependency graph; high or critical advisories fail the check.
 
 Acceptance starts three Consul agents on `127.0.0.1`–`127.0.0.3` and isolated
 single-agent ACL/TLS scenarios.
