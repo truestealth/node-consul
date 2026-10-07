@@ -1,4 +1,3 @@
-import async_ from "async";
 import should from "should";
 import { randomUUID } from "node:crypto";
 
@@ -18,7 +17,7 @@ helper.describe("Catalog", function () {
       tags: [this.service.tag],
     });
 
-    await async_.retry({ times: 100, interval: 100 }, async () => {
+    await helper.retry(async () => {
       const data = await this.c1.catalog.services();
 
       if (!data || !data.hasOwnProperty(this.service.name)) {

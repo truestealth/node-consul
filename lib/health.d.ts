@@ -1,4 +1,4 @@
-import { CommonOptions, Consul } from "./consul.js";
+import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 
 interface NodeOptions extends CommonOptions {
   node: string;
@@ -61,16 +61,24 @@ declare class Health {
 
   consul: Consul;
 
-  node(options: NodeOptions): Promise<NodeResult>;
+  node<TIncludeResponse extends boolean = false>(
+    options: NodeOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<NodeResult, TIncludeResponse>>;
   node(name: string): Promise<NodeResult>;
 
-  checks(options: ChecksOptions): Promise<ChecksResult>;
+  checks<TIncludeResponse extends boolean = false>(
+    options: ChecksOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ChecksResult, TIncludeResponse>>;
   checks(service: string): Promise<ChecksResult>;
 
-  service(options: ServiceOptions): Promise<ServiceResult>;
+  service<TIncludeResponse extends boolean = false>(
+    options: ServiceOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ServiceResult, TIncludeResponse>>;
   service(service: string): Promise<ServiceResult>;
 
-  state(options: StateOptions): Promise<StateResult>;
+  state<TIncludeResponse extends boolean = false>(
+    options: StateOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<StateResult, TIncludeResponse>>;
   state(
     state: "any" | "passing" | "warning" | "critical",
   ): Promise<StateResult>;

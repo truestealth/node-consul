@@ -48,4 +48,37 @@ jobs:
         run: pnpm test
 
       - name: Check package
-        run: npm pack --dry-run
+        run: npm run package:check
+
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CONSUL_VERSION: 2.0.4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Consul
+        run: |
+          mkdir -p "$RUNNER_TEMP/consul"
+          cd "$RUNNER_TEMP/consul"
+          curl --fail --silent --show-error --location --remote-name "https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip"
+          curl --fail --silent --show-error --location --remote-name "https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_SHA256SUMS"
+          sha256sum --check --ignore-missing "consul_${CONSUL_VERSION}_SHA256SUMS"
+          unzip "consul_${CONSUL_VERSION}_linux_amd64.zip"
+          echo "CONSUL_BIN=$RUNNER_TEMP/consul/consul" >> "$GITHUB_ENV"
+
+      - name: Acceptance
+        run: npm run acceptance

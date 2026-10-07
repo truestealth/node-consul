@@ -1,6 +1,6 @@
-import { Consul } from "../consul.js";
+import { CommonOptions, Consul, ResponseResult } from "../consul.js";
 
-interface CreateOptions {
+interface CreateOptions extends CommonOptions {
   name?: string;
   type?: "client" | "management";
   rules?: string;
@@ -8,22 +8,22 @@ interface CreateOptions {
 
 type CreateResult = any;
 
-interface UpdateOptions {
+interface UpdateOptions extends CommonOptions {
   id: string;
   name?: string;
   type?: "client" | "management";
   rules?: string;
 }
 
-type UpdateResult = any;
+type UpdateResult = undefined;
 
-interface DestroyOptions {
+interface DestroyOptions extends CommonOptions {
   id: string;
 }
 
-type DestroyResult = any;
+type DestroyResult = undefined;
 
-interface InfoOptions {
+interface InfoOptions extends CommonOptions {
   id: string;
 }
 
@@ -38,38 +38,52 @@ interface InfoResult {
 
 type GetOptions = InfoOptions;
 
-type GetResult = InfoResult;
+type GetResult = InfoResult | undefined;
 
-interface CloneOptions {
+interface CloneOptions extends CommonOptions {
   id: string;
 }
 
 type CloneResult = any;
 
-interface ListOptions {}
+interface ListOptions extends CommonOptions {}
 
-type ListResult = GetResult[];
+type ListResult = InfoResult[];
 
 declare class AclLegacy {
   constructor(consul: Consul);
 
   consul: Consul;
 
-  create(options?: CreateOptions): Promise<CreateResult>;
+  create<TIncludeResponse extends boolean = false>(
+    options?: CreateOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<CreateResult, TIncludeResponse>>;
 
-  update(options: UpdateOptions): Promise<UpdateResult>;
+  update<TIncludeResponse extends boolean = false>(
+    options: UpdateOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<UpdateResult, TIncludeResponse>>;
 
-  destroy(options: DestroyOptions): Promise<DestroyResult>;
+  destroy<TIncludeResponse extends boolean = false>(
+    options: DestroyOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<DestroyResult, TIncludeResponse>>;
   destroy(id: string): Promise<DestroyResult>;
 
-  info(options: InfoOptions): Promise<InfoResult>;
-  info(id: string): Promise<InfoResult>;
+  info<TIncludeResponse extends boolean = false>(
+    options: InfoOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<InfoResult | undefined, TIncludeResponse>>;
+  info(id: string): Promise<InfoResult | undefined>;
 
-  get(options: GetOptions): Promise<GetResult>;
+  get<TIncludeResponse extends boolean = false>(
+    options: GetOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<GetResult, TIncludeResponse>>;
   get(id: string): Promise<GetResult>;
 
-  clone(options: CloneOptions): Promise<CloneResult>;
+  clone<TIncludeResponse extends boolean = false>(
+    options: CloneOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<CloneResult, TIncludeResponse>>;
   clone(id: string): Promise<CloneResult>;
 
-  list(options?: ListOptions): Promise<ListResult>;
+  list<TIncludeResponse extends boolean = false>(
+    options?: ListOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ListResult, TIncludeResponse>>;
 }

@@ -1,6 +1,4 @@
-import { EventEmitter } from "node:events";
-import { IncomingMessage } from "node:http";
-import { CommonOptions, Consul } from "./consul.js";
+import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 
 interface GetOptions extends CommonOptions {
   key?: string;
@@ -42,19 +40,6 @@ type GetData<
         : GetItem<TBuffer extends true ? Buffer : string>)
   | undefined;
 
-type ContextOptions<TIncludeResponse extends boolean> = {
-  ctx?: EventEmitter & { includeResponse?: TIncludeResponse };
-};
-
-type Result<
-  TData,
-  TIncludeResponse extends boolean,
-> = TIncludeResponse extends true
-  ? undefined extends TData
-    ? [IncomingMessage, Exclude<TData, undefined>?]
-    : [IncomingMessage, TData]
-  : TData;
-
 interface KeysOptions extends GetOptions {
   recurse?: boolean;
 }
@@ -66,7 +51,7 @@ interface SetOptions extends CommonOptions {
   value: string | Buffer | null;
   dc?: string;
   flags?: number;
-  cas?: number;
+  cas?: number | string | bigint;
   acquire?: string;
   release?: string;
   ns?: string;
@@ -78,7 +63,7 @@ interface DelOptions extends CommonOptions {
   key?: string;
   dc?: string;
   recurse?: boolean;
-  cas?: number;
+  cas?: number | string | bigint;
   ns?: string;
 }
 
@@ -99,29 +84,31 @@ declare class Kv {
       raw?: TRaw;
       recurse?: TRecurse;
       buffer?: TBuffer;
-    } & ContextOptions<TIncludeResponse>,
-  ): Promise<Result<GetData<TRaw, TRecurse, TBuffer>, TIncludeResponse>>;
+    } & CommonOptions<TIncludeResponse>,
+  ): Promise<
+    ResponseResult<GetData<TRaw, TRecurse, TBuffer>, TIncludeResponse>
+  >;
   get(key: string): Promise<GetResult>;
 
   keys<TIncludeResponse extends boolean = false>(
-    options?: KeysOptions & ContextOptions<TIncludeResponse>,
-  ): Promise<Result<KeysResult, TIncludeResponse>>;
+    options?: KeysOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<KeysResult, TIncludeResponse>>;
   keys(key: string): Promise<KeysResult>;
 
   set<TIncludeResponse extends boolean = false>(
-    options: SetOptions & ContextOptions<TIncludeResponse>,
-  ): Promise<Result<SetResult, TIncludeResponse>>;
+    options: SetOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<SetResult, TIncludeResponse>>;
   set(key: string, value: string | Buffer | null): Promise<SetResult>;
   set<TIncludeResponse extends boolean = false>(
     key: string,
     value: string | Buffer | null,
     options: Omit<SetOptions, "key" | "value"> &
-      ContextOptions<TIncludeResponse>,
-  ): Promise<Result<SetResult, TIncludeResponse>>;
+      CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<SetResult, TIncludeResponse>>;
 
   del<TIncludeResponse extends boolean = false>(
-    options: DelOptions & ContextOptions<TIncludeResponse>,
-  ): Promise<Result<DelResult, TIncludeResponse>>;
+    options: DelOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<DelResult, TIncludeResponse>>;
   del(key: string): Promise<DelResult>;
 
   delete: Kv["del"];

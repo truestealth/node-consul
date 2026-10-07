@@ -1,4 +1,3 @@
-import async_ from "async";
 import should from "should";
 import { randomUUID } from "node:crypto";
 
@@ -15,7 +14,7 @@ helper.describe("Health", function () {
       check: { ttl: "60s" },
     });
 
-    await async_.retry({ times: 100, interval: 100 }, async () => {
+    await helper.retry(async () => {
       let data = await this.c1.health.node("node1");
       if (data && Array.isArray(data)) {
         data = data.find((c) => c.ServiceName === this.service);

@@ -1,4 +1,4 @@
-import { CommonOptions, Consul } from "../consul.js";
+import { CommonOptions, Consul, ResponseResult } from "../consul.js";
 
 interface ListOptions extends CommonOptions {
   filter?: string;
@@ -62,53 +62,65 @@ export interface CheckOptions {
 interface RegisterOptions
   extends CheckOptions, Omit<CommonOptions, "timeout"> {}
 
-type RegisterResult = any;
+type RegisterResult = undefined;
 
 interface DeregisterOptions extends CommonOptions {
   id: string;
 }
 
-type DeregisterResult = any;
+type DeregisterResult = undefined;
 
 interface PassOptions extends CommonOptions {
   id: string;
   note?: string;
 }
 
-type PassResult = any;
+type PassResult = undefined;
 
 interface WarnOptions extends CommonOptions {
   id: string;
   note?: string;
 }
 
-type WarnResult = any;
+type WarnResult = undefined;
 
 interface FailOptions extends CommonOptions {
   id: string;
   note?: string;
 }
 
-type FailResult = any;
+type FailResult = undefined;
 
 declare class AgentCheck {
   constructor(consul: Consul);
 
   consul: Consul;
 
-  list(options?: ListOptions): Promise<ListResult>;
+  list<TIncludeResponse extends boolean = false>(
+    options?: ListOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ListResult, TIncludeResponse>>;
 
-  register(options: RegisterOptions): Promise<RegisterResult>;
+  register<TIncludeResponse extends boolean = false>(
+    options: RegisterOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<RegisterResult, TIncludeResponse>>;
 
-  deregister(options: DeregisterOptions): Promise<DeregisterResult>;
+  deregister<TIncludeResponse extends boolean = false>(
+    options: DeregisterOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<DeregisterResult, TIncludeResponse>>;
   deregister(id: string): Promise<DeregisterResult>;
 
-  pass(options: PassOptions): Promise<PassResult>;
+  pass<TIncludeResponse extends boolean = false>(
+    options: PassOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<PassResult, TIncludeResponse>>;
   pass(id: string): Promise<PassResult>;
 
-  warn(options: WarnOptions): Promise<WarnResult>;
+  warn<TIncludeResponse extends boolean = false>(
+    options: WarnOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<WarnResult, TIncludeResponse>>;
   warn(id: string): Promise<WarnResult>;
 
-  fail(options: FailOptions): Promise<FailResult>;
+  fail<TIncludeResponse extends boolean = false>(
+    options: FailOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<FailResult, TIncludeResponse>>;
   fail(id: string): Promise<FailResult>;
 }

@@ -3,9 +3,9 @@
 [Русский](MIGRATION.ru.md) · [Package documentation](README.md)
 
 This guide applies to `consul@2.x` and `@truestealth/consul@0.1.x` applications.
-The `1.0.0-beta.1` preview introduces the module-format change first. Transport
-and API additions will follow before the stable 1.0.0 release; do not assume
-features from the roadmap are already available.
+The `1.0.0-beta.2` preview includes the ESM conversion and native Node.js HTTP
+transport. Config Entries will follow before stable 1.0.0; do not assume every
+feature from the roadmap is already available.
 
 ## 1. Update Node.js and the dependency
 
@@ -14,7 +14,7 @@ runs CI on Node.js 26.
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.0.0-beta.1
+npm install @truestealth/consul@1.0.0-beta.2
 ```
 
 Skip the uninstall command if you already use the scoped package. Update any
@@ -83,13 +83,40 @@ The Promise API and existing sections (`kv`, `agent`, `health`, `catalog`,
 Server support for inherited legacy endpoints still depends on your Consul
 version.
 
+## 5. Check transport customization and lifecycle
+
+Papi has been removed. The client has no runtime dependencies and uses Node.js
+`http` and `https` directly. Standard HTTPS options, private CA certificates,
+client certificates, keep-alive, a custom agent, and `socketPath` remain available.
+Pass TLS settings in the constructor; `agent: false` disables connection pooling.
+
+Papi plugin, middleware, and codec extension hooks are not supported. Applications
+that extend or access Papi internals need to remove that integration; those hooks
+are not replaced by a new extension framework. Use the public constructor and
+endpoint options instead.
+
+Lifecycle changes are intentional:
+
+- `signal` accepts an AbortSignal per call or through `defaults`. Legacy
+  EventEmitter `ctx` cancellation is retained.
+- `timeout` now bounds the whole request, including receipt of the response body.
+  Expiration destroys the request. Numbers are milliseconds; strings such as
+  `"2s"` are accepted.
+- `watch.end()` cancels both the blocking request and its retry timer.
+- `destroy()` cancels the client's pending requests and watches. It closes only
+  the agent it created; a caller-supplied agent survives and must be closed by
+  its owner. Requests on a destroyed client fail.
+- `ctx.includeResponse: true` returns response tuples across the API, with
+  matching declarations rather than KV-only typing.
+- Ordinary requests, including writes, are not automatically retried. Handle
+  uncertain write outcomes explicitly; a transport error is not evidence that
+  the server did not commit the operation.
+
 ## Preview limits
 
-Papi is still the HTTP transport in `1.0.0-beta.1`. The preview has not yet added
-native AbortSignal, Config Entries, or service-intentions through Config Entries.
-It also retains the old ownership rule: `destroy()` destroys a custom agent.
-Avoid sharing that agent. `ctx` cancellation remains available; response-tuple
-typing for `ctx.includeResponse: true` is currently correct only for KV methods.
+Config Entries and service-intentions through Config Entries are not included
+in `1.0.0-beta.2`. The inherited API does not cover every endpoint of every Consul
+version. No Redis-backed resolver, DNS discovery, or scoring subsystem is added.
 
 Run application tests against your real Consul configuration before adopting the
 preview. Test ACLs, TLS, binary KV values, CAS failures, blocking reads, watch

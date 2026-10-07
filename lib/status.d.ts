@@ -1,4 +1,4 @@
-import { CommonOptions, Consul } from "./consul.js";
+import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 
 interface LeaderOptions extends CommonOptions {}
 
@@ -13,7 +13,11 @@ declare class Status {
 
   consul: Consul;
 
-  leader(options?: LeaderOptions): Promise<LeaderResult>;
+  leader<TIncludeResponse extends boolean = false>(
+    options?: LeaderOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<LeaderResult, TIncludeResponse>>;
 
-  peers(options?: PeersOptions): Promise<PeersResult>;
+  peers<TIncludeResponse extends boolean = false>(
+    options?: PeersOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<PeersResult, TIncludeResponse>>;
 }

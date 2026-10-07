@@ -3,7 +3,7 @@ import { CommonOptions, Consul } from "./consul.js";
 
 interface WatchOptions extends CommonOptions {
   method: Function;
-  options: Record<string, string>;
+  options?: CommonOptions & Record<string, unknown>;
   backoffFactor?: number;
   backoffMax?: number;
   maxAttempts?: number;
@@ -16,7 +16,7 @@ declare class Watch extends EventEmitter {
 
   isRunning(): boolean;
 
-  updateTime(): number;
+  updateTime(): number | undefined;
 
   end(): void;
 }

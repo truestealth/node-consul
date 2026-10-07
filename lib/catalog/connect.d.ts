@@ -1,4 +1,4 @@
-import { Consul } from "../consul.js";
+import { CommonOptions, Consul, ResponseResult } from "../consul.js";
 import { NodesOptions, NodesResult } from "./service.js";
 
 declare class CatalogConnect {
@@ -6,6 +6,8 @@ declare class CatalogConnect {
 
   consul: Consul;
 
-  nodes(options: NodesOptions): Promise<NodesResult>;
+  nodes<TIncludeResponse extends boolean = false>(
+    options: NodesOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<NodesResult, TIncludeResponse>>;
   nodes(service: string): Promise<NodesResult>;
 }

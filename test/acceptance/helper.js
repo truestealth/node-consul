@@ -1,15 +1,24 @@
 import "should";
 
-import async_ from "async";
-import fs from "node:fs";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
-import temp from "temp";
-temp.track();
-import util from "node:util";
+import { setTimeout as delay } from "node:timers/promises";
 import createDebug from "debug";
 
 import Consul from "../../lib/index.js";
+
+async function retry(operation) {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === 99) throw error;
+      await delay(100);
+    }
+  }
+}
 
 function bufferToString(value, depth) {
   if (!value) return value;
@@ -43,6 +52,7 @@ class Cluster {
   constructor() {
     this._started = false;
     this.process = {};
+    this.dataPaths = [];
   }
 
   async spawn(opts) {
@@ -56,7 +66,8 @@ class Cluster {
       }
     }
 
-    const serverDataPath = await util.promisify(temp.mkdir)({});
+    const serverDataPath = await mkdtemp(path.join(tmpdir(), "consul-smoke-"));
+    this.dataPaths.push(serverDataPath);
     const serverConfigPath = path.join(serverDataPath, "config.json");
 
     const serverConfig = {
@@ -64,12 +75,11 @@ class Cluster {
       acl: {
         enabled: false,
       },
+      connect: { enabled: true },
+      raft_logstore: { backend: "boltdb" },
       enable_script_checks: true,
     };
-    await util.promisify(fs.writeFile)(
-      serverConfigPath,
-      JSON.stringify(serverConfig),
-    );
+    await writeFile(serverConfigPath, JSON.stringify(serverConfig));
 
     args.push("-config-file");
     args.push(serverConfigPath);
@@ -78,54 +88,52 @@ class Cluster {
     args.push("-pid-file");
     args.push(path.join(serverDataPath, opts.node, "pid"));
 
-    const server = spawn(binPath, args);
-
-    server.destroy = () => {
-      server._destroyed = true;
-      server.kill("SIGKILL");
-    };
-
-    this.process[opts.node] = server;
+    const server = spawn(binPath, args, { windowsHide: true });
+    let startupError;
+    let closed = false;
+    const exit = new Promise((resolve) => {
+      server.once("error", (error) => {
+        startupError = error;
+      });
+      server.once("close", (code) => {
+        closed = true;
+        resolve(code);
+      });
+    });
+    this.process[opts.node] = { server, exit };
 
     const serverLog = debugBuffer("consul:server:" + opts.node);
     server.stdout.on("data", (data) => serverLog(data));
     server.stderr.on("data", (data) => serverLog(data));
 
-    server.on("exit", (code) => {
-      if (code !== 0 && !server._destroyed) {
-        const err = new Error(
-          "Server exited (" + opts.node + "): " + code + "\n",
-        );
-        err.message += "Command: " + binPath + " " + JSON.stringify(args);
-        throw err;
-      }
-    });
-
-    const token = opts.bootstrap ? "root" : "agent_master";
     const client = new Consul({
       host: opts.bind,
-      defaults: { token: token },
+      timeout: 1000,
     });
 
     const clientLog = debugBuffer("consul:client:" + opts.node);
     client.on("log", clientLog);
 
     try {
-      await async_.retry({ times: 100, interval: 100 }, async () => {
-        // wait until server starts
+      await retry(async () => {
+        if (startupError) throw startupError;
+        if (closed) {
+          throw new Error("Consul exited before startup: " + opts.node);
+        }
         if (opts.bootstrap) {
-          await client.kv.set("check", "ok");
+          const leader = await client.status.leader();
+          if (!leader) throw new Error("Consul leader is not elected yet");
         } else {
           await client.agent.self();
         }
       });
-    } catch (err) {
-      server.destroy();
+    } finally {
+      client.destroy();
     }
   }
 
   async setup() {
-    if (this._started) return new Error("already started");
+    if (this._started) throw new Error("already started");
     this._started = true;
 
     const nodes = ["node1", "node2", "node3"].map((node, i) => {
@@ -146,19 +154,35 @@ class Cluster {
       return this.spawn(opts);
     });
 
-    await Promise.all(nodes);
+    const results = await Promise.allSettled(nodes);
+    const failure = results.find((result) => result.status === "rejected");
+    if (failure) {
+      await this.teardown();
+      throw failure.reason;
+    }
   }
 
   async teardown() {
-    for (const server of Object.values(this.process)) {
-      server.destroy();
+    const processes = Object.values(this.process);
+    for (const { server } of processes) {
+      if (server.exitCode === null && server.signalCode === null) {
+        server.kill("SIGKILL");
+      }
     }
 
-    await util.promisify(temp.cleanup)();
+    await Promise.all(processes.map(({ exit }) => exit));
+    await Promise.all(
+      this.dataPaths.map((directory) =>
+        rm(directory, { recursive: true, force: true }),
+      ),
+    );
+    this.process = {};
+    this.dataPaths = [];
   }
 }
 
 async function before(test) {
+  test.timeout(60000);
   test.cluster = new Cluster();
 
   await test.cluster.setup();
@@ -166,13 +190,15 @@ async function before(test) {
   for (let i = 1; i <= 3; i++) {
     const client = (test["c" + i] = new Consul({
       host: "127.0.0." + i,
-      defaults: { token: "root" },
     }));
     client.on("log", debugBuffer("consul:" + "127.0.0." + i));
   }
 }
 
 async function after(test) {
+  for (const name of ["c1", "c2", "c3"]) {
+    if (test[name]) test[name].destroy();
+  }
   await test.cluster.teardown();
 }
 
@@ -180,4 +206,4 @@ function skip() {}
 skip.skip = skip;
 
 const acceptanceDescribe = process.env.ACCEPTANCE === "true" ? describe : skip;
-export { before, after, acceptanceDescribe as describe };
+export { before, after, retry, acceptanceDescribe as describe };

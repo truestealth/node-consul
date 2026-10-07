@@ -2,18 +2,19 @@
 
 [Русский](README.ru.md) · [Migration guide](MIGRATION.md)
 
-A Promise-based client for the Consul HTTP API, with TypeScript declarations
-included. The package is maintained independently of the original
-`silas/node-consul` project.
+A Promise-based client for the HashiCorp Consul HTTP API, with TypeScript
+declarations included. This is an independent community project, not an official
+HashiCorp client.
 
 ## Requirements and release status
 
 - Node.js **24 or newer**. CI covers Node.js 24 and 26; see the
   [Node.js release schedule](https://nodejs.org/en/about/previous-releases).
 - Native **ES modules only**. There is no separate CommonJS build.
-- `1.0.0-beta.1` is a migration preview, not the stable 1.0.0 release. It switches
-  the package to ESM while retaining the existing Papi transport. Replacing Papi,
-  adding AbortSignal support, and supporting Config Entries are subsequent steps.
+- No runtime dependencies: requests use Node.js `http` and `https`.
+- `1.0.0-beta.2` previews the native HTTP transport and lifecycle changes. Config
+  Entries are the next stage; acceptance and release checks must finish before
+  stable 1.0.0.
 
 Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
 [migration guide](MIGRATION.md).
@@ -21,7 +22,7 @@ Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
 ## Get started
 
 ```sh
-npm install @truestealth/consul@1.0.0-beta.1
+npm install @truestealth/consul@1.0.0-beta.2
 ```
 
 Use an `.mjs` file or set `"type": "module"` in your application's `package.json`:
@@ -53,22 +54,52 @@ application and pass the values you need.
 
 `new Consul()` targets `http://127.0.0.1:8500/v1`.
 
-| Client option            | Purpose                                                                          |
-| ------------------------ | -------------------------------------------------------------------------------- |
-| `host`, `port`, `secure` | Agent address; `secure: true` selects HTTPS                                      |
-| `defaults`               | Common options to apply to requests; individual calls can override them          |
-| `agent`                  | A Node.js `http.Agent` or `https.Agent`; otherwise a keep-alive agent is created |
+| Client option            | Purpose                                                                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `host`, `port`, `secure` | Agent address; `secure: true` selects HTTPS                                                                       |
+| `defaults`               | Common options to apply to requests; individual calls can override them                                           |
+| `agent`                  | A Node.js `http.Agent` or `https.Agent`; `false` disables pooling, otherwise an owned keep-alive agent is created |
 
-The transport also accepts `baseUrl`, `headers`, `socketPath`, and Node.js TLS
-options such as `ca`, `cert`, `key`, and `servername`. In this preview, declarations
-do not yet cover every advanced transport option. Keep certificate verification
-enabled; provide your private CA instead of disabling HTTPS verification.
+The constructor also accepts `baseUrl`, `headers`, `socketPath`, and Node.js TLS
+options such as `ca`, `cert`, `key`, and `servername`. Keep certificate verification
+enabled; provide your private CA instead of disabling HTTPS verification. A
+custom agent remains yours to configure and destroy.
 
-Common method options include `token`, `dc`, `partition`, `consistent`, `stale`,
-`filter`, `near`, `index`, `wait`, and `timeout`. An endpoint may support only a
+```js
+import { readFile } from "node:fs/promises";
+
+const consul = new Consul({
+  host: "consul.internal",
+  port: 8501,
+  secure: true,
+  ca: await readFile("./certs/ca.pem"),
+  cert: await readFile("./certs/client.pem"),
+  key: await readFile("./certs/client-key.pem"),
+});
+```
+
+Common method options include `token`, `dc`, `ns`, `partition`, `consistent`,
+`stale`, `filter`, `near`, `index`, `wait`, `timeout`, and `signal`. An endpoint may support only a
 subset; the [Consul API reference](https://developer.hashicorp.com/consul/api-docs)
 defines their server-side behavior. Numeric `timeout` values are milliseconds;
-duration strings such as `"2s"` are also accepted.
+duration strings such as `"2s"` are also accepted. The timeout is a total request
+deadline, including the response body; expiration destroys the request rather
+than merely reporting that it is slow.
+
+Pass an AbortSignal to cancel a call, or put it in `defaults` to cancel a group
+of calls:
+
+```js
+const controller = new AbortController();
+const pending = consul.kv.get({
+  key: "example/greeting",
+  signal: controller.signal,
+});
+controller.abort();
+await pending.catch((error) => {
+  // Handle cancellation; the request is no longer running.
+});
+```
 
 For a blocking read, use `index` with `wait` and leave enough time for Consul to
 complete the request:
@@ -169,10 +200,19 @@ watch.end();
 consul.destroy();
 ```
 
-In this preview, `destroy()` also destroys a supplied custom agent. Do not share
-that agent with unrelated clients. Cancellation still uses an EventEmitter
-`ctx` that emits `"cancel"`; native `AbortSignal` is not available yet. TypeScript
-currently models `ctx.includeResponse: true` correctly only for KV methods.
+`watch.end()` cancels both the in-flight blocking read and any retry timer.
+`consul.destroy()` stops all of that client's watches, cancels pending requests,
+and destroys its own agent. It does not destroy an agent supplied by the caller.
+The client cannot be reused after destruction; create another instance instead.
+
+The legacy EventEmitter `ctx` with a `"cancel"` event remains supported.
+`ctx.includeResponse: true` returns `[response, result]` instead of only the data;
+for a missing result the second tuple element may be absent. The response is a
+Node.js `IncomingMessage`.
+
+Ordinary requests are never retried automatically, including writes. A network
+failure does not prove a write was rejected by Consul; reconcile the result or
+use CAS rather than blindly resubmitting a non-idempotent operation.
 
 ## Development
 
@@ -182,14 +222,21 @@ Use the pnpm version pinned in `package.json`:
 pnpm install --frozen-lockfile
 npm test
 npm run types
+npm run package:check
 git diff --check
 npm pack --dry-run
 ```
 
-Acceptance tests need a local Consul executable and their loopback networking
-environment; they are not part of the mock-only unit test run. Run
-`npm run acceptance` only after preparing that environment. The client has no
-build step; the npm archive ships source modules and declarations.
+`npm test` combines Nock-based API tests with real local HTTP/HTTPS servers,
+including TLS and cancellation cases. `npm run package:check` installs the actual
+npm archive offline and checks its imports, HTTP requests and NodeNext types.
+
+Acceptance tests start three HashiCorp Consul agents on `127.0.0.1`–`127.0.0.3`.
+Set `CONSUL_BIN` to a local executable if `consul` is not on `PATH`, prepare those
+loopback addresses, then run `npm run acceptance`. The test cluster enables
+Connect and uses the BoltDB Raft backend for Windows compatibility; these are
+test settings, not requirements for your deployment. The client has no build
+step; the npm archive ships source modules and declarations.
 
 ## Origin and license
 

@@ -1,4 +1,3 @@
-import events from "node:events";
 import http from "node:http";
 import https from "node:https";
 import { URL } from "node:url";
@@ -299,42 +298,6 @@ describe("utils", function () {
       should(utils.safeBigInt("1.0")).be.undefined();
       should(utils.safeBigInt(null)).be.undefined();
       should(utils.safeBigInt({})).be.undefined();
-    });
-  });
-
-  describe("setTimeoutContext", function () {
-    beforeEach(function () {
-      this.ctx = new events.EventEmitter();
-    });
-
-    it("should cancel timeout", function (done) {
-      utils.setTimeoutContext(
-        () => {
-          throw new Error("should have been canceled");
-        },
-        this.ctx,
-        10,
-      );
-
-      this.ctx.on("cancel", () => {
-        should(this.ctx.listeners("cancel")).have.length(1);
-
-        done();
-      });
-
-      this.ctx.emit("cancel");
-    });
-
-    it("should remove cancel listener", function (done) {
-      utils.setTimeoutContext(
-        () => {
-          should(this.ctx.listeners("cancel")).have.length(0);
-
-          done();
-        },
-        this.ctx,
-        0,
-      );
     });
   });
 

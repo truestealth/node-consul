@@ -1,5 +1,5 @@
 import { AclLegacy } from "./acl/legacy.js";
-import { CommonOptions, Consul } from "./consul.js";
+import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 
 interface BootstrapOptions extends CommonOptions {
   bootstrapsecret?: string;
@@ -31,7 +31,11 @@ declare class Acl {
 
   static Legacy: typeof AclLegacy;
 
-  bootstrap(options?: BootstrapOptions): Promise<BootstrapResult>;
+  bootstrap<TIncludeResponse extends boolean = false>(
+    options?: BootstrapOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<BootstrapResult, TIncludeResponse>>;
 
-  replication(options?: ReplicationOptions): Promise<ReplicationResult>;
+  replication<TIncludeResponse extends boolean = false>(
+    options?: ReplicationOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ReplicationResult, TIncludeResponse>>;
 }

@@ -1,4 +1,4 @@
-import { CommonOptions, Consul } from "../consul.js";
+import { CommonOptions, Consul, ResponseResult } from "../consul.js";
 import { CheckOptions } from "./check.js";
 
 interface ListOptions extends CommonOptions {
@@ -29,13 +29,13 @@ interface RegisterOptions extends CommonOptions {
   checks?: CheckOptions[];
 }
 
-type RegisterResult = any;
+type RegisterResult = undefined;
 
 interface DeregisterOptions extends CommonOptions {
   id: string;
 }
 
-type DeregisterResult = any;
+type DeregisterResult = undefined;
 
 interface MaintenanceOptions extends CommonOptions {
   id: string;
@@ -44,20 +44,28 @@ interface MaintenanceOptions extends CommonOptions {
   ns?: string;
 }
 
-type MaintenanceResult = any;
+type MaintenanceResult = undefined;
 
 declare class AgentService {
   constructor(consul: Consul);
 
   consul: Consul;
 
-  list(options?: ListOptions): Promise<ListResult>;
+  list<TIncludeResponse extends boolean = false>(
+    options?: ListOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ListResult, TIncludeResponse>>;
 
-  register(options: RegisterOptions): Promise<RegisterResult>;
+  register<TIncludeResponse extends boolean = false>(
+    options: RegisterOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<RegisterResult, TIncludeResponse>>;
   register(name: string): Promise<RegisterResult>;
 
-  deregister(options: DeregisterOptions): Promise<DeregisterResult>;
+  deregister<TIncludeResponse extends boolean = false>(
+    options: DeregisterOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<DeregisterResult, TIncludeResponse>>;
   deregister(id: string): Promise<DeregisterResult>;
 
-  maintenance(options: MaintenanceOptions): Promise<MaintenanceResult>;
+  maintenance<TIncludeResponse extends boolean = false>(
+    options: MaintenanceOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<MaintenanceResult, TIncludeResponse>>;
 }

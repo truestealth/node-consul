@@ -1,4 +1,4 @@
-import { CommonOptions, Consul } from "../consul.js";
+import { CommonOptions, Consul, ResponseResult } from "../consul.js";
 
 interface ListOptions extends CommonOptions {
   dc?: string;
@@ -22,9 +22,13 @@ declare class CatalogNode {
 
   consul: Consul;
 
-  list(options?: ListOptions): Promise<ListResult>;
+  list<TIncludeResponse extends boolean = false>(
+    options?: ListOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ListResult, TIncludeResponse>>;
   list(dc: string): Promise<ListResult>;
 
-  services(options: ServicesOptions): Promise<ServicesResult>;
+  services<TIncludeResponse extends boolean = false>(
+    options: ServicesOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ServicesResult, TIncludeResponse>>;
   services(node: string): Promise<ServicesResult>;
 }

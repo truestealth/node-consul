@@ -1,8 +1,10 @@
 {
   "node": true,
   "module": true,
-  "esversion": 11,
+  "esversion": 13,
   "globals": {
+    "AbortController": false,
+    "AbortSignal": false,
     // Mocha
     "describe": false,
     "it": false,

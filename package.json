@@ -1,7 +1,7 @@
 {
   "name": "@truestealth/consul",
-  "version": "1.0.0-beta.1",
-  "description": "Consul HTTP API client with Promise support and TypeScript declarations",
+  "version": "1.0.0-beta.2",
+  "description": "Dependency-free ESM client for the HashiCorp Consul HTTP API",
   "type": "module",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -29,12 +29,8 @@
       "jshint>minimatch": "^3.1.5"
     }
   },
-  "dependencies": {
-    "papi": "^1.1.2"
-  },
   "devDependencies": {
     "@types/node": "^24.19.1",
-    "async": "^3.2.6",
     "c8": "^12.0.0",
     "debug": "^4.4.3",
     "jshint": "^2.13.6",
@@ -43,14 +39,14 @@
     "prettier": "^3.9.9",
     "should": "^13.2.3",
     "sinon": "^22.1.0",
-    "temp": "^0.9.4",
     "tsd": "^0.33.0"
   },
   "scripts": {
-    "format": "prettier -w lib test test-d .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto",
-    "test": "jshint lib test && prettier -c lib test test-d .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto && c8 --all --include=lib/**/*.js --check-coverage --100 mocha --recursive --check-leaks",
+    "format": "prettier -w lib test test-d scripts .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto",
+    "test": "jshint lib test && prettier -c lib test test-d scripts .github package.json README.md README.ru.md MIGRATION.md MIGRATION.ru.md .jshintrc --end-of-line auto && c8 --all --include=lib/**/*.js --check-coverage --100 mocha --recursive --check-leaks",
     "types": "tsd",
-    "acceptance": "ACCEPTANCE=true mocha test/acceptance --recursive --check-leaks --timeout 30000",
+    "package:check": "node scripts/package-smoke.js",
+    "acceptance": "node scripts/acceptance.js",
     "acceptanceSetupMacOS": "sudo ifconfig lo0 alias 127.0.0.2 up && sudo ifconfig lo0 alias 127.0.0.3 up"
   },
   "tsd": {

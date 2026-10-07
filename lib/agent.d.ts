@@ -1,4 +1,4 @@
-import { CommonOptions, Consul } from "./consul.js";
+import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 import {
   AgentCheck,
   ListOptions as CheckListOptions,
@@ -19,7 +19,7 @@ type MembersResult = any[];
 
 interface ReloadOptions extends CommonOptions {}
 
-type ReloadResult = any;
+type ReloadResult = undefined;
 
 interface SelfOptions extends CommonOptions {}
 
@@ -30,14 +30,14 @@ interface MaintenanceOptions extends CommonOptions {
   reason?: string;
 }
 
-type MaintenanceResult = any;
+type MaintenanceResult = undefined;
 
 interface JoinOptions extends CommonOptions {
   address: string;
   wan?: boolean;
 }
 
-type JoinResult = any;
+type JoinResult = undefined;
 
 interface ForceLeaveOptions extends CommonOptions {
   node: string;
@@ -45,7 +45,7 @@ interface ForceLeaveOptions extends CommonOptions {
   wan?: boolean;
 }
 
-type ForceLeaveResult = any;
+type ForceLeaveResult = undefined;
 
 declare class Agent {
   constructor(consul: Consul);
@@ -57,21 +57,38 @@ declare class Agent {
   static Check: typeof AgentCheck;
   static Service: typeof AgentService;
 
-  checks(options?: CheckListOptions): Promise<CheckListResult>;
+  checks<TIncludeResponse extends boolean = false>(
+    options?: CheckListOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<CheckListResult, TIncludeResponse>>;
 
-  services(options?: ServiceListOptions): Promise<ServiceListResult>;
+  services<TIncludeResponse extends boolean = false>(
+    options?: ServiceListOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ServiceListResult, TIncludeResponse>>;
 
-  members(options?: MembersOptions): Promise<MembersResult>;
+  members<TIncludeResponse extends boolean = false>(
+    options?: MembersOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<MembersResult, TIncludeResponse>>;
 
-  reload(options?: ReloadOptions): Promise<ReloadResult>;
+  reload<TIncludeResponse extends boolean = false>(
+    options?: ReloadOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ReloadResult, TIncludeResponse>>;
 
-  self(options?: SelfOptions): Promise<SelfResult>;
+  self<TIncludeResponse extends boolean = false>(
+    options?: SelfOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<SelfResult, TIncludeResponse>>;
 
-  maintenance(options: MaintenanceOptions): Promise<MaintenanceResult>;
+  maintenance<TIncludeResponse extends boolean = false>(
+    options: MaintenanceOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<MaintenanceResult, TIncludeResponse>>;
   maintenance(enable: boolean): Promise<MaintenanceResult>;
 
-  join(options: JoinOptions): Promise<JoinResult>;
+  join<TIncludeResponse extends boolean = false>(
+    options: JoinOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<JoinResult, TIncludeResponse>>;
   join(address: string): Promise<JoinResult>;
 
-  forceLeave(options: ForceLeaveOptions | string): Promise<ForceLeaveResult>;
+  forceLeave<TIncludeResponse extends boolean = false>(
+    options: ForceLeaveOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ForceLeaveResult, TIncludeResponse>>;
+  forceLeave(node: string): Promise<ForceLeaveResult>;
 }

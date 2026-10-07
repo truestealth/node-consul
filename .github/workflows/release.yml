@@ -69,7 +69,20 @@ jobs:
         run: pnpm test
 
       - name: Check package contents
-        run: npm pack --dry-run
+        run: npm run package:check
+
+      - name: Acceptance
+        env:
+          CONSUL_VERSION: 2.0.4
+        run: |
+          mkdir -p "$RUNNER_TEMP/consul"
+          cd "$RUNNER_TEMP/consul"
+          curl --fail --silent --show-error --location --remote-name "https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_linux_amd64.zip"
+          curl --fail --silent --show-error --location --remote-name "https://releases.hashicorp.com/consul/${CONSUL_VERSION}/consul_${CONSUL_VERSION}_SHA256SUMS"
+          sha256sum --check --ignore-missing "consul_${CONSUL_VERSION}_SHA256SUMS"
+          unzip "consul_${CONSUL_VERSION}_linux_amd64.zip"
+          cd "$GITHUB_WORKSPACE"
+          CONSUL_BIN="$RUNNER_TEMP/consul/consul" npm run acceptance
 
       - name: Update npm CLI
         run: npm install --global npm@11

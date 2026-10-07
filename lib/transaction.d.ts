@@ -1,39 +1,42 @@
-import { CommonOptions, Consul } from "./consul.js";
+import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 
 interface KVOption {
-  verb: string;
-  key: string;
-  value?: string;
-  flags?: number;
-  index?: number;
-  session?: string;
-  namespace?: string;
+  Verb: string;
+  Key: string;
+  Value?: string;
+  Flags?: number;
+  Index?: number;
+  Session?: string;
+  Namespace?: string;
+  Partition?: string;
 }
 
 interface NodeOption {
-  verb: string;
-  node: any;
+  Verb: string;
+  Node: any;
 }
 
 interface ServiceOption {
-  verb: string;
-  node: string;
-  service: any;
+  Verb: string;
+  Node: string;
+  Service: any;
 }
 
 interface CheckOption {
-  verb: string;
-  check: any;
+  Verb: string;
+  Check: any;
 }
 
-type Operation = KVOption | NodeOption | ServiceOption | CheckOption;
+type Operation =
+  | { KV: KVOption }
+  | { Node: NodeOption }
+  | { Service: ServiceOption }
+  | { Check: CheckOption };
 
-interface CreateOptions extends CommonOptions {
-  operations: Operation[];
-}
+interface CreateOptions extends CommonOptions {}
 
 interface CreateResult {
-  Results?: Record<"KV" | "Node" | "Service" | "Check", any>[];
+  Results?: Partial<Record<"KV" | "Node" | "Service" | "Check", any>>[];
   Errors?: any[];
 }
 
@@ -42,9 +45,8 @@ declare class Transaction {
 
   consul: Consul;
 
-  create(options: CreateOptions): Promise<CreateResult>;
-  create(
+  create<TIncludeResponse extends boolean = false>(
     operations: Operation[],
-    options: CreateOptions,
-  ): Promise<CreateResult>;
+    options?: CreateOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<CreateResult, TIncludeResponse>>;
 }

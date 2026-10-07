@@ -1,4 +1,4 @@
-import { CommonOptions, Consul } from "./consul.js";
+import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 import { CatalogConnect } from "./catalog/connect.js";
 import {
   CatalogNode,
@@ -71,7 +71,7 @@ interface RegisterOptions extends CommonOptions {
   namespace?: string;
 }
 
-type RegisterResult = any;
+type RegisterResult = undefined;
 
 interface DeregisterOptions extends CommonOptions {
   node: string;
@@ -81,7 +81,7 @@ interface DeregisterOptions extends CommonOptions {
   namespace?: string;
 }
 
-type DeregisterResult = any;
+type DeregisterResult = undefined;
 
 type ServicesOptions = ServiceListOptions;
 
@@ -99,17 +99,27 @@ declare class Catalog {
   static Node: typeof CatalogNode;
   static Service: typeof CatalogService;
 
-  datacenters(options?: DatacentersOptions): Promise<DatacentersResult>;
+  datacenters<TIncludeResponse extends boolean = false>(
+    options?: DatacentersOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<DatacentersResult, TIncludeResponse>>;
 
-  nodes(options: NodesOptions): Promise<NodesResult>;
+  nodes<TIncludeResponse extends boolean = false>(
+    options?: NodesOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<NodesResult, TIncludeResponse>>;
   nodes(service: string): Promise<NodesResult>;
 
-  register(options: RegisterOptions): Promise<RegisterResult>;
+  register<TIncludeResponse extends boolean = false>(
+    options: RegisterOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<RegisterResult, TIncludeResponse>>;
   register(node: string): Promise<RegisterResult>;
 
-  deregister(options: DeregisterOptions): Promise<DeregisterResult>;
+  deregister<TIncludeResponse extends boolean = false>(
+    options: DeregisterOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<DeregisterResult, TIncludeResponse>>;
   deregister(node: string): Promise<DeregisterResult>;
 
-  services(options?: ServicesOptions): Promise<ServicesResult>;
+  services<TIncludeResponse extends boolean = false>(
+    options?: ServicesOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ServicesResult, TIncludeResponse>>;
   services(dc: string): Promise<ServicesResult>;
 }

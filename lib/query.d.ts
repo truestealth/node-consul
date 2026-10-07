@@ -1,4 +1,4 @@
-import { CommonOptions, Consul } from "./consul.js";
+import { CommonOptions, Consul, ResponseResult } from "./consul.js";
 
 interface ListOptions extends CommonOptions {}
 
@@ -47,7 +47,13 @@ interface UpdateOptions extends CreateOptions {
   query: string;
 }
 
-type UpdateResult = any;
+type UpdateResult = undefined;
+
+interface DestroyOptions extends CommonOptions {
+  query: string;
+}
+
+type DestroyResult = undefined;
 
 interface ExecuteOptions extends CommonOptions {
   query: string;
@@ -66,19 +72,36 @@ declare class Query {
 
   consul: Consul;
 
-  list(options?: ListOptions): Promise<ListResult>;
+  list<TIncludeResponse extends boolean = false>(
+    options?: ListOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ListResult, TIncludeResponse>>;
 
-  create(options: CreateOptions): Promise<CreateResult>;
+  create<TIncludeResponse extends boolean = false>(
+    options: CreateOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<CreateResult, TIncludeResponse>>;
   create(service: string): Promise<CreateResult>;
 
-  get(options: GetOptions): Promise<GetResult>;
+  get<TIncludeResponse extends boolean = false>(
+    options: GetOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<GetResult, TIncludeResponse>>;
   get(query: string): Promise<GetResult>;
 
-  update(options: UpdateOptions): Promise<UpdateResult>;
+  update<TIncludeResponse extends boolean = false>(
+    options: UpdateOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<UpdateResult, TIncludeResponse>>;
 
-  execute(options: ExecuteOptions): Promise<ExecuteResult>;
+  destroy<TIncludeResponse extends boolean = false>(
+    options: DestroyOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<DestroyResult, TIncludeResponse>>;
+  destroy(query: string): Promise<DestroyResult>;
+
+  execute<TIncludeResponse extends boolean = false>(
+    options: ExecuteOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ExecuteResult, TIncludeResponse>>;
   execute(query: string): Promise<ExecuteResult>;
 
-  explain(options: ExplainOptions): Promise<ExplainResult>;
+  explain<TIncludeResponse extends boolean = false>(
+    options: ExplainOptions & CommonOptions<TIncludeResponse>,
+  ): Promise<ResponseResult<ExplainResult, TIncludeResponse>>;
   explain(query: string): Promise<ExplainResult>;
 }
