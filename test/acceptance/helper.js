@@ -54,7 +54,8 @@ function debugBuffer(name) {
 class Cluster {
   constructor(options = {}) {
     this.options = options;
-    this.nodeCount = options.nodeCount || (options.secure ? 1 : 3);
+    this.aclEnabled = Boolean(options.acl || options.secure);
+    this.nodeCount = options.nodeCount || (this.aclEnabled ? 1 : 3);
     this.httpsPort = 28501;
     this.clientOptions = {};
     this._started = false;
@@ -86,7 +87,7 @@ class Cluster {
       raft_logstore: { backend: "boltdb" },
       enable_script_checks: true,
     };
-    if (this.options.secure) {
+    if (this.aclEnabled) {
       serverConfig.acl = {
         enabled: true,
         default_policy: "deny",
@@ -95,6 +96,8 @@ class Cluster {
           agent: this.managementToken,
         },
       };
+    }
+    if (this.options.secure) {
       serverConfig.ports = { http: -1, https: this.httpsPort };
       serverConfig.tls = {
         https: {
@@ -152,7 +155,7 @@ class Cluster {
         if (opts.bootstrap) {
           const leader = await client.status.leader();
           if (!leader) throw new Error("Consul leader is not elected yet");
-          if (this.options.secure) await client.acl.token.self();
+          if (this.aclEnabled) await client.acl.token.self();
         } else {
           await client.agent.self();
         }
@@ -166,8 +169,11 @@ class Cluster {
     if (this._started) throw new Error("already started");
     this._started = true;
 
-    if (this.options.secure) {
+    if (this.aclEnabled) {
       this.managementToken = randomUUID();
+      this.clientOptions.defaults = { token: this.managementToken };
+    }
+    if (this.options.secure) {
       this.certPath = fileURLToPath(
         new URL("../fixtures/tls-cert.pem", import.meta.url),
       );
@@ -177,12 +183,12 @@ class Cluster {
       const cert = await readFile(this.certPath);
       const key = await readFile(this.keyPath);
       this.clientOptions = {
+        ...this.clientOptions,
         secure: true,
         port: this.httpsPort,
         ca: cert,
         cert,
         key,
-        defaults: { token: this.managementToken },
       };
     }
 

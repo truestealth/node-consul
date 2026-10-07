@@ -2,7 +2,7 @@
 
 [Русский](MIGRATION.ru.md) · [Package documentation](README.md)
 
-This guide applies to `consul@2.x` and `@truestealth/consul@0.1.x` applications.
+This guide applies to applications using `consul@2.x`.
 Version 1.0.0 includes ESM, the native Node.js HTTP transport, and Config Entries
 with service-intentions support.
 

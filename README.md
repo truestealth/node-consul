@@ -17,7 +17,7 @@ HashiCorp client.
 Version **1.1.0** adds modern ACL resources and precise Config Entry and
 transaction declarations. Existing client sections and connection options remain.
 
-Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
+Moving from `consul@2.x`? Start with the
 [migration guide](MIGRATION.md).
 
 ## Get started
@@ -276,7 +276,7 @@ try {
 
 Token resource IDs are **AccessorIDs**; authentication uses **SecretIDs**.
 Do not log issued tokens or complete token lists: lists can contain secrets
-depending on ACL permissions. Missing reads resolve to `undefined`; failed
+depending on ACL permissions. HTTP 404 reads resolve to `undefined`; failed
 deletes still reject. Updates do not merge records; retain grants that must
 survive a PUT.
 
@@ -286,6 +286,9 @@ changing defaults. Use it explicitly, then call
 and matching binding rule, not just ACL bootstrap. The
 [ACL API](https://developer.hashicorp.com/consul/api-docs/acl) describes the
 required permissions and server-version restrictions.
+
+Consul can return 403 rather than 404 for a deleted or unknown ACL token.
+These responses remain errors, including logout after revocation.
 
 ## Typed configuration and transactions
 

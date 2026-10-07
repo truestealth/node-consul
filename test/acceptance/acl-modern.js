@@ -27,7 +27,7 @@ function bearerToken(privateKey) {
 
 helper.describe("Modern ACL acceptance", function () {
   before(async function () {
-    await helper.before(this, { secure: true, nodeCount: 1 });
+    await helper.before(this, { acl: true, nodeCount: 1 });
   });
 
   after(async function () {
@@ -126,7 +126,9 @@ helper.describe("Modern ACL acceptance", function () {
 
     assert.equal(await this.c1.acl.token.del(cloned.AccessorID), true);
     assert.equal(await this.c1.acl.token.del(created.AccessorID), true);
-    assert.equal(await this.c1.acl.token.get(created.AccessorID), undefined);
+    await assert.rejects(this.c1.acl.token.get(created.AccessorID), {
+      statusCode: 403,
+    });
     await assert.rejects(this.c1.acl.token.del(created.AccessorID), {
       statusCode: 404,
     });
@@ -260,9 +262,11 @@ helper.describe("Modern ACL acceptance", function () {
         await anonymous.acl.logout({ token: loggedIn.SecretID }),
         true,
       );
-      assert.equal(await this.c1.acl.token.get(loggedIn.AccessorID), undefined);
+      await assert.rejects(this.c1.acl.token.get(loggedIn.AccessorID), {
+        statusCode: 403,
+      });
       await assert.rejects(anonymous.acl.logout({ token: loggedIn.SecretID }), {
-        statusCode: 401,
+        statusCode: 403,
       });
     } finally {
       anonymous.destroy();

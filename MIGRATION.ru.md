@@ -2,7 +2,7 @@
 
 [English](MIGRATION.md) · [Документация клиента](README.ru.md)
 
-Инструкция для проектов с `consul@2.x` и `@truestealth/consul@0.1.x`. В версию
+Инструкция для проектов с `consul@2.x`. В версию
 1.0.0 входят ESM, HTTP-слой на стандартной библиотеке Node.js и Config Entries
 с service-intentions.
 

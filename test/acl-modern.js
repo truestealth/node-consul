@@ -330,6 +330,24 @@ describe("Modern ACL", function () {
     client.destroy();
   });
 
+  it("preserves forbidden responses for missing tokens", async function () {
+    const read = this.nock
+      .get("/v1/acl/token/" + id)
+      .reply(403, "token does not exist: ACL not found");
+    const logout = this.nock
+      .post("/v1/acl/logout")
+      .matchHeader("x-consul-token", "consul-smoke-revoked")
+      .reply(403, "ACL not found");
+    const client = this.consul;
+    await assert.rejects(client.acl.token.get(id), { statusCode: 403 });
+    await assert.rejects(client.acl.logout({ token: "consul-smoke-revoked" }), {
+      statusCode: 403,
+    });
+    assert.equal(read.isDone(), true);
+    assert.equal(logout.isDone(), true);
+    client.destroy();
+  });
+
   it("enables expanded reads only when explicitly true", async function () {
     const expanded = {
       ...token,
