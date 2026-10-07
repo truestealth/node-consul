@@ -14,7 +14,9 @@ interface BootstrapOptions extends CommonOptions {
   bootstrapSecret?: string;
 }
 
-type BootstrapResult = AclTokenResult;
+interface BootstrapResult extends AclTokenResult {
+  ID: string;
+}
 
 interface ReplicationOptions extends CommonOptions {
   dc?: string;

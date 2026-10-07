@@ -4,8 +4,7 @@ import type { IncomingMessage } from "node:http";
 import { expectType, expectError } from "tsd";
 import Consul from "../lib/index.js";
 import type { CommonOptions, QueryMeta, ResponseResult } from "../lib/index.js";
-import type { ReplicationResult } from "../lib/acl.js";
-import type { AclTokenResult } from "../lib/acl/modern.js";
+import type { BootstrapResult, ReplicationResult } from "../lib/acl.js";
 import type { InfoResult as AclInfoResult } from "../lib/acl/legacy.js";
 import type { ListResult as CheckListResult } from "../lib/agent/check.js";
 import type { ListResult as ServiceListResult } from "../lib/agent/service.js";
@@ -67,14 +66,18 @@ expectType<Promise<[IncomingMessage, ReplicationResult]>>(
 const replication = await consul.acl.replication();
 expectType<"" | "policies" | "tokens">(replication.ReplicationType);
 expectError(replication.ReplicatedType);
-expectType<Promise<AclTokenResult>>(
+expectType<Promise<BootstrapResult>>(
   consul.acl.bootstrap({
     bootstrapSecret: "11111111-2222-4333-8444-555555555555",
   }),
 );
-expectType<Promise<[IncomingMessage, AclTokenResult]>>(
+expectType<Promise<[IncomingMessage, BootstrapResult]>>(
   consul.acl.bootstrap(common),
 );
+const bootstrapped = await consul.acl.bootstrap();
+expectType<string>(bootstrapped.ID);
+expectType<string>(bootstrapped.SecretID);
+expectType<string>(bootstrapped.AccessorID);
 expectType<Promise<[IncomingMessage, AclInfoResult?]>>(
   consul.acl.legacy.info({ id: "id", ...common }),
 );

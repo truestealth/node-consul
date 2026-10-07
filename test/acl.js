@@ -17,10 +17,11 @@ describe("Acl", function () {
       const secret = "11111111-2222-4333-8444-555555555555";
       this.nock
         .put("/v1/acl/bootstrap", { BootstrapSecret: secret })
-        .reply(200, { AccessorID: "accessor", SecretID: secret });
+        .reply(200, { ID: secret, AccessorID: "accessor", SecretID: secret });
 
       const data = await this.consul.acl.bootstrap({ bootstrapSecret: secret });
       should(data.SecretID).equal(secret);
+      should(data.ID).equal(secret);
     });
 
     describe("legacy", function () {
