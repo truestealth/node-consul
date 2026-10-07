@@ -38,7 +38,7 @@ describe("utils", function () {
   describe("body", function () {
     it("should work", function () {
       utils.body({ err: null, res: { body: "body" } }, (...args) => {
-        should(args).eql([false, undefined, "body"]);
+        should(args).eql([false, "body"]);
       });
 
       utils.body({ err: "err", res: { body: "body" } }, (...args) => {
@@ -50,11 +50,11 @@ describe("utils", function () {
   describe("bodyItem", function () {
     it("should work", function () {
       utils.bodyItem({ err: null, res: { body: ["body"] } }, (...args) => {
-        should(args).eql([false, undefined, "body"]);
+        should(args).eql([false, "body"]);
       });
 
       utils.bodyItem({ err: null, res: { body: [] } }, (...args) => {
-        should(args).eql([false, undefined, undefined]);
+        should(args).eql([false, undefined]);
       });
 
       utils.bodyItem({ err: "err", res: { body: ["body"] } }, (...args) => {
@@ -66,7 +66,7 @@ describe("utils", function () {
   describe("empty", function () {
     it("should work", function () {
       utils.empty({ err: null, res: "res" }, (...args) => {
-        should(args).eql([false, undefined, undefined]);
+        should(args).eql([false, undefined]);
       });
 
       utils.empty({ err: "err", res: "res" }, (...args) => {

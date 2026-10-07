@@ -1,47 +1,68 @@
 {
-  "name": "consul",
-  "version": "2.0.1",
-  "description": "Consul client",
+  "name": "@truestealth/consul",
+  "version": "0.1.0-beta.3",
+  "description": "Consul HTTP API client with Promise support and TypeScript declarations",
   "main": "./lib",
   "types": "./lib/index.d.ts",
   "files": [
-    "./lib"
+    "./lib",
+    "NOTICE"
   ],
+  "packageManager": "pnpm@10.34.6",
+  "pnpm": {
+    "overrides": {
+      "jshint>lodash": "^4.18.1",
+      "jshint>minimatch": "^3.1.5"
+    }
+  },
   "dependencies": {
-    "papi": "^1.1.0"
+    "papi": "^1.1.2"
   },
   "devDependencies": {
-    "@types/node": "^22.7.6",
-    "async": "^3.2.0",
-    "debug": "^4.3.1",
-    "jshint": "^2.5.5",
-    "mocha": "^10.7.3",
-    "nock": "^13.0.7",
-    "nyc": "^17.1.0",
-    "prettier": "^3.3.3",
-    "should": "^13.2.1",
-    "sinon": "^19.0.2",
+    "@types/node": "^22.20.5",
+    "async": "^3.2.6",
+    "debug": "^4.4.3",
+    "jshint": "^2.13.6",
+    "mocha": "^12.0.3",
+    "nock": "^14.0.17",
+    "nyc": "^18.0.0",
+    "prettier": "^3.9.9",
+    "should": "^13.2.3",
+    "sinon": "^22.1.0",
     "temp": "^0.9.4",
-    "tsd": "^0.31.2",
-    "uuid": "^10.0.0"
+    "tsd": "^0.33.0"
   },
   "scripts": {
-    "format": "prettier -w .",
-    "test": "jshint lib test && prettier -c . && nyc mocha -- --recursive --check-leaks && nyc check-coverage --statements 100 --functions 100 --branches 100 --lines 100",
+    "format": "prettier -w lib test test-d .github package.json README.md .jshintrc --end-of-line auto",
+    "test": "jshint lib test && prettier -c lib test test-d .github package.json README.md .jshintrc --end-of-line auto && nyc mocha --recursive --check-leaks && nyc check-coverage --statements 100 --functions 100 --branches 100 --lines 100",
     "types": "tsd",
-    "acceptance": "ACCEPTANCE=true nyc mocha -- test/acceptance --recursive --check-leaks --timeout 30000",
+    "acceptance": "ACCEPTANCE=true nyc mocha test/acceptance --recursive --check-leaks --timeout 30000",
     "acceptanceSetupMacOS": "sudo ifconfig lo0 alias 127.0.0.2 up && sudo ifconfig lo0 alias 127.0.0.3 up"
   },
   "keywords": [
-    "consul"
+    "consul",
+    "consul-client",
+    "hashicorp",
+    "service-discovery",
+    "key-value-store"
   ],
+  "homepage": "https://github.com/truestealth/node-consul#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/silas/node-consul.git"
+    "url": "https://github.com/truestealth/node-consul.git"
   },
   "bugs": {
-    "url": "https://github.com/silas/node-consul/issues"
+    "url": "https://github.com/truestealth/node-consul/issues"
   },
-  "author": "Silas Sewell <silas@sewell.org>",
+  "author": {
+    "name": "truestealth",
+    "url": "https://github.com/truestealth"
+  },
+  "contributors": [
+    {
+      "name": "Silas Sewell",
+      "url": "https://github.com/silas"
+    }
+  ],
   "license": "MIT"
 }

@@ -1,5 +1,6 @@
 import { Agent as httpAgent } from "http";
 import { Agent as httpsAgent } from "https";
+import { EventEmitter } from "events";
 import { Acl } from "./acl";
 import { Agent } from "./agent";
 import { Catalog } from "./catalog";
@@ -14,19 +15,21 @@ import { Watch, WatchOptions } from "./watch";
 
 export interface CommonOptions {
   token?: string;
-}
-
-interface DefaultOptions extends CommonOptions {
   dc?: string;
   partition?: string;
   wan?: boolean;
   consistent?: boolean;
   stale?: boolean;
-  index?: string;
+  index?: string | number | bigint;
   wait?: string;
   near?: string;
+  "node-meta"?: string[];
   filter?: string;
+  timeout?: string | number;
+  ctx?: EventEmitter & { includeResponse?: boolean };
 }
+
+type DefaultOptions = Omit<CommonOptions, "ctx" | "node-meta">;
 
 interface ConsulOptions {
   host?: string;

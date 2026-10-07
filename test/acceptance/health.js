@@ -2,13 +2,13 @@
 
 const async_ = require("async");
 const should = require("should");
-const uuid = require("uuid");
+const { randomUUID } = require("crypto");
 
 const helper = require("./helper");
 
 helper.describe("Health", function () {
   before(async function () {
-    this.service = "service-" + uuid.v4();
+    this.service = "service-" + randomUUID();
 
     await helper.before(this);
 

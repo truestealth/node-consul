@@ -1,7 +1,7 @@
 "use strict";
 
 const should = require("should");
-const uuid = require("uuid");
+const { randomUUID } = require("crypto");
 
 const helper = require("./helper");
 
@@ -15,7 +15,7 @@ helper.describe("Event", function () {
   });
 
   beforeEach(async function () {
-    this.name = "event-" + uuid.v4();
+    this.name = "event-" + randomUUID();
     this.payload = JSON.stringify({ hello: "world" });
     this.bufferPayload = Buffer.from(this.payload);
 

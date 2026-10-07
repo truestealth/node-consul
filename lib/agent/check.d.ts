@@ -46,7 +46,7 @@ export interface CheckOptions {
   grpc?: string;
   grpcusetls?: boolean;
   shell?: string;
-  timeout: string;
+  timeout?: string;
   interval?: string;
   ttl?: string;
   aliasnode?: string;
@@ -59,7 +59,8 @@ export interface CheckOptions {
   failuresbeforecritical?: number;
 }
 
-interface RegisterOptions extends CheckOptions, CommonOptions {}
+interface RegisterOptions
+  extends CheckOptions, Omit<CommonOptions, "timeout"> {}
 
 type RegisterResult = any;
 

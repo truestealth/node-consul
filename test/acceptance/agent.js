@@ -2,7 +2,7 @@
 
 const async_ = require("async");
 const should = require("should");
-const uuid = require("uuid");
+const { randomUUID } = require("crypto");
 
 const constants = require("../../lib/constants");
 
@@ -165,7 +165,7 @@ helper.describe("Agent", function () {
     });
 
     beforeEach(async function () {
-      this.name = "check-" + uuid.v4();
+      this.name = "check-" + randomUUID();
       this.deregister = [this.name];
 
       const checks = await this.c1.agent.checks();
@@ -193,7 +193,7 @@ helper.describe("Agent", function () {
 
     describe("register", function () {
       it("should create check", async function () {
-        const name = "check-" + uuid.v4();
+        const name = "check-" + randomUUID();
 
         await this.exists(name, false);
         await this.deregister.push(name);
@@ -248,7 +248,7 @@ helper.describe("Agent", function () {
     });
 
     beforeEach(async function () {
-      this.name = "service-" + uuid.v4();
+      this.name = "service-" + randomUUID();
       this.deregister = [this.name];
 
       // remove existing services
@@ -280,7 +280,7 @@ helper.describe("Agent", function () {
 
     describe("register", function () {
       it("should create service", async function () {
-        const name = "service-" + uuid.v4();
+        const name = "service-" + randomUUID();
 
         await this.exists(name, false);
         await this.c1.agent.service.register(name);
@@ -288,7 +288,7 @@ helper.describe("Agent", function () {
       });
 
       it("should create service with http check", async function () {
-        const name = "service-" + uuid.v4();
+        const name = "service-" + randomUUID();
         const notes = "simple http check";
 
         await this.exists(name, false);
@@ -308,7 +308,7 @@ helper.describe("Agent", function () {
       });
 
       it("should create service with script check", async function () {
-        const name = "service-" + uuid.v4();
+        const name = "service-" + randomUUID();
         const notes = "simple script check";
 
         await this.exists(name, false);

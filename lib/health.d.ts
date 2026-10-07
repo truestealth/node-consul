@@ -1,7 +1,7 @@
 import { CommonOptions, Consul } from "./consul";
 
 interface NodeOptions extends CommonOptions {
-  name: string;
+  node: string;
   dc?: string;
   filter?: string;
   ns?: string;

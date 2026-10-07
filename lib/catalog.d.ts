@@ -34,21 +34,18 @@ interface RegisterCheckHealthDefinitionBase {
   deregistercriticalserviceafterduration?: string;
 }
 
-interface RegisterCheckHealthDefinitionHttp
-  extends RegisterCheckHealthDefinitionBase {
+interface RegisterCheckHealthDefinitionHttp extends RegisterCheckHealthDefinitionBase {
   http: string;
   tlsskipverify?: boolean;
   tlsservername?: string;
 }
 
-interface RegisterCheckHealthDefinitionTcp
-  extends RegisterCheckHealthDefinitionBase {
+interface RegisterCheckHealthDefinitionTcp extends RegisterCheckHealthDefinitionBase {
   tcp: string;
 }
 
 type RegisterCheckHealthDefinition =
-  | RegisterCheckHealthDefinitionHttp
-  | RegisterCheckHealthDefinitionTcp;
+  RegisterCheckHealthDefinitionHttp | RegisterCheckHealthDefinitionTcp;
 
 interface RegisterCheck {
   node?: string;

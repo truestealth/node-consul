@@ -1,8 +1,10 @@
 "use strict";
 
 const http = require("http");
+const { execFileSync } = require("child_process");
 
 const should = require("should");
+const nock = require("nock");
 
 const consul = require("../lib");
 
@@ -10,6 +12,15 @@ const helper = require("./helper");
 
 describe("Consul", function () {
   helper.setup(this);
+
+  it("should allow a process to exit after import", function () {
+    this.timeout(10000);
+    execFileSync(
+      process.execPath,
+      ["-e", "require(" + JSON.stringify(require.resolve("../lib")) + ")"],
+      { timeout: 5000 },
+    );
+  });
 
   it("should work", function () {
     should(helper.consul()).not.have.property("_defaults");
@@ -91,6 +102,32 @@ describe("Consul", function () {
   });
 
   describe("destroy", function () {
+    it("should close a keep-alive socket", async function () {
+      nock.enableNetConnect("127.0.0.1");
+      const server = http.createServer((request, response) => {
+        response.setHeader("content-type", "application/json");
+        response.end(JSON.stringify("127.0.0.1:8300"));
+      });
+      const socketClosed = new Promise((resolve) => {
+        server.once("connection", (socket) => socket.once("close", resolve));
+      });
+      await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+      const client = helper.consul({
+        port: server.address().port,
+        timeout: 1000,
+      });
+
+      try {
+        should(await client.status.leader()).equal("127.0.0.1:8300");
+        client.destroy();
+        await socketClosed;
+      } finally {
+        client.destroy();
+        await new Promise((resolve) => server.close(resolve));
+        nock.disableNetConnect();
+      }
+    });
+
     it("should work", function () {
       const client = helper.consul();
       should(client._opts.agent).not.be.null();

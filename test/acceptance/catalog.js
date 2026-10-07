@@ -2,7 +2,7 @@
 
 const async_ = require("async");
 const should = require("should");
-const uuid = require("uuid");
+const { randomUUID } = require("crypto");
 
 const helper = require("./helper");
 
@@ -11,8 +11,8 @@ helper.describe("Catalog", function () {
     await helper.before(this);
 
     this.service = {
-      name: "service-" + uuid.v4(),
-      tag: "tag-" + uuid.v4(),
+      name: "service-" + randomUUID(),
+      tag: "tag-" + randomUUID(),
     };
 
     await this.c1.agent.service.register({

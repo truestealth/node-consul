@@ -1,11 +1,28 @@
-> [!CAUTION]
-> This project is no longer maintained.
-
 # Consul
 
-This is a [Consul][consul] client.
+An independently maintained [Consul][consul] HTTP client at
+[truestealth/node-consul](https://github.com/truestealth/node-consul), based on
+[silas/node-consul](https://github.com/silas/node-consul), commit
+`542f4ef61d500019460105356ab7b732262b5bdc`.
+
+The client preserves the CommonJS entry point and Promise API, with built-in
+TypeScript declarations. Importing the package does not start background workers
+or load the application's `.env` file.
+
+The independent package is `@truestealth/consul`. The current `0.1.0-beta.3`
+release is experimental; it still uses CommonJS and Papi. Further dependency
+cleanup and modernization are planned, not part of this beta.
+
+Known beta limitation: TypeScript declarations describe `ctx.includeResponse:
+true` results correctly only for KV methods. Avoid this option with other API
+methods in TypeScript until their response tuple types are updated.
+
+```console
+npm install @truestealth/consul@next
+```
 
 - [Documentation](#documentation)
+- [Development](#development)
 - [License](#license)
 
 ## Documentation
@@ -48,14 +65,14 @@ Options
 
 Advanced options
 
-- agent (http.Agent|https.Agent, optionals): if not set uses the global agent
+- agent (http.Agent|https.Agent, optional): if not set creates a keep-alive agent; call `consul.destroy()` to close its sockets when finished
 - baseUrl, headers, tags, socketPath, and timeout (see [Papi](https://github.com/silas/node-papi/blob/main/README.md#client) for details)
 - tls options: ca, cert, ciphers, clientCertEngine, crl, dhparam, ecdhCurve, honorCipherOrder, key, passphrase, pfx, rejectUnauthorized, secureOptions, secureProtocol, servername, and sessionIdContext (see [Node.js docs](https://nodejs.org/dist/latest/docs/api/tls.html#tls_tls_connect_options_callback) for details)
 
 Usage
 
 ```javascript
-import Consul from "consul";
+const Consul = require("@truestealth/consul");
 
 const consul = new Consul();
 ```
@@ -71,7 +88,7 @@ These options can be included with any method call, although only certain endpoi
 - wan (Boolean, default: false): return WAN members instead of LAN members
 - consistent (Boolean, default: false): require strong consistency
 - stale (Boolean, default: false): use whatever is available, can be arbitrarily stale
-- index (String, optional): used with `ModifyIndex` to block and wait for changes
+- index (String|Number|BigInt, optional): used with `ModifyIndex` to block and wait for changes; use String or BigInt for indices beyond JavaScript's safe integer range
 - wait (String, optional): limit how long to wait for changes (ex: `5m`), used with index
 - token (String, optional): ACL token
 - near (String, optional): used to sort the node list in ascending order based on the estimated round trip time from that node
@@ -1346,6 +1363,10 @@ Options
 - raw (Boolean, optional): return raw value (can't be used with recursive, implies buffer)
 - buffer (Boolean, default: false): decode value into Buffer instead of String
 
+Without `recurse`, the result is one KV item. With `recurse: true`, it is an array
+of items. Missing keys and empty responses resolve to `undefined`. `raw: true`
+returns a Buffer; `buffer: true` changes each item's non-null `Value` to a Buffer.
+
 Usage
 
 ```javascript
@@ -2036,6 +2057,38 @@ setTimeout(() => {
   watch.end();
 }, 30 * 1000);
 ```
+
+## Development
+
+Use Node.js 22.12 or newer and the pnpm version specified in `package.json`.
+CI checks Node.js 22, 24, and 26.
+
+```console
+pnpm install --frozen-lockfile
+npm test
+npm run types
+git diff --check
+npm pack --dry-run
+```
+
+Nock remains on its CommonJS-compatible 14.x release line. UUIDs in acceptance
+tests use Node's `crypto.randomUUID()`. The runtime dependency is Papi 1.1.2;
+it remains in place to preserve the existing HTTP, timeout, and cancellation API.
+
+Scoped pnpm overrides update JSHint's pinned Lodash and Minimatch dependencies
+within their existing major versions. The development dependency audit still
+reports unpatched advisories in `braces` (via tsd) and `sprintf-js` (via nyc).
+These packages are not runtime dependencies of the published client.
+
+The npm archive includes `lib/`, `package.json`, `README.md`, `LICENSE`, and
+`NOTICE`. Local settings, indexes, working notes, and tests are excluded.
+
+Publish only under `@truestealth/consul`, never under the original `consul` name.
+The release workflow `release.yml` requires a tag matching `package.json`
+(`v<version>`) and npm Trusted Publishing for this repository and the `npm`
+GitHub environment. Prereleases use the `next` dist-tag; stable releases use
+`latest`. On the first publication, npm also creates `latest` pointing to the
+initial version, even when publishing with `--tag next`.
 
 ## Acceptance Tests
 

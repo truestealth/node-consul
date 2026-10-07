@@ -1,9 +1,13 @@
-import { Consul } from "./consul";
+import { EventEmitter } from "events";
+import { IncomingMessage } from "http";
+import { CommonOptions, Consul } from "./consul";
 
-interface GetOptions {
+interface GetOptions extends CommonOptions {
   key?: string;
   dc?: string;
   raw?: boolean;
+  buffer?: boolean;
+  recurse?: boolean;
   keys?: boolean;
   separator?: string;
   ns?: string;
@@ -13,18 +17,43 @@ interface GetOptionsRecurse extends GetOptions {
   recurse: boolean;
 }
 
-interface GetItem {
+interface GetItem<TValue = string> {
   CreateIndex: number;
   ModifyIndex: number;
   LockIndex: number;
   Key: string;
   Flags: number;
-  Value: string | null;
+  Value: TValue | null;
 }
 
-type GetResult = GetItem | null;
+type GetResult = GetItem | undefined;
 
-type GetResultRecurse = GetItem[] | GetItem | null;
+type GetResultRecurse = GetItem[] | GetItem | undefined;
+
+type GetData<
+  TRaw extends boolean,
+  TRecurse extends boolean,
+  TBuffer extends boolean,
+> =
+  | (TRaw extends true
+      ? Buffer
+      : TRecurse extends true
+        ? GetItem<TBuffer extends true ? Buffer : string>[]
+        : GetItem<TBuffer extends true ? Buffer : string>)
+  | undefined;
+
+type ContextOptions<TIncludeResponse extends boolean> = {
+  ctx?: EventEmitter & { includeResponse?: TIncludeResponse };
+};
+
+type Result<
+  TData,
+  TIncludeResponse extends boolean,
+> = TIncludeResponse extends true
+  ? undefined extends TData
+    ? [IncomingMessage, Exclude<TData, undefined>?]
+    : [IncomingMessage, TData]
+  : TData;
 
 interface KeysOptions extends GetOptions {
   recurse?: boolean;
@@ -32,9 +61,9 @@ interface KeysOptions extends GetOptions {
 
 type KeysResult = string[];
 
-interface SetOptions {
+interface SetOptions extends CommonOptions {
   key?: string;
-  value: string | Buffer;
+  value: string | Buffer | null;
   dc?: string;
   flags?: number;
   cas?: number;
@@ -45,7 +74,7 @@ interface SetOptions {
 
 type SetResult = boolean;
 
-interface DelOptions {
+interface DelOptions extends CommonOptions {
   key?: string;
   dc?: string;
   recurse?: boolean;
@@ -60,21 +89,40 @@ declare class Kv {
 
   consul: Consul;
 
-  get(options?: GetOptions): Promise<GetResult>;
+  get<
+    TRaw extends boolean = false,
+    TRecurse extends boolean = false,
+    TBuffer extends boolean = false,
+    TIncludeResponse extends boolean = false,
+  >(
+    options?: GetOptions & {
+      raw?: TRaw;
+      recurse?: TRecurse;
+      buffer?: TBuffer;
+    } & ContextOptions<TIncludeResponse>,
+  ): Promise<Result<GetData<TRaw, TRecurse, TBuffer>, TIncludeResponse>>;
   get(key: string): Promise<GetResult>;
-  get(options?: GetOptionsRecurse): Promise<GetResultRecurse>;
 
-  keys(options?: KeysOptions): Promise<KeysResult>;
+  keys<TIncludeResponse extends boolean = false>(
+    options?: KeysOptions & ContextOptions<TIncludeResponse>,
+  ): Promise<Result<KeysResult, TIncludeResponse>>;
   keys(key: string): Promise<KeysResult>;
 
-  set(options: SetOptions): Promise<SetResult>;
-  set(key: string, value: string | Buffer): Promise<SetResult>;
-  set(
+  set<TIncludeResponse extends boolean = false>(
+    options: SetOptions & ContextOptions<TIncludeResponse>,
+  ): Promise<Result<SetResult, TIncludeResponse>>;
+  set(key: string, value: string | Buffer | null): Promise<SetResult>;
+  set<TIncludeResponse extends boolean = false>(
     key: string,
-    value: string | Buffer,
-    options: SetOptions,
-  ): Promise<SetResult>;
+    value: string | Buffer | null,
+    options: Omit<SetOptions, "key" | "value"> &
+      ContextOptions<TIncludeResponse>,
+  ): Promise<Result<SetResult, TIncludeResponse>>;
 
-  del(options: DelOptions): Promise<DelResult>;
+  del<TIncludeResponse extends boolean = false>(
+    options: DelOptions & ContextOptions<TIncludeResponse>,
+  ): Promise<Result<DelResult, TIncludeResponse>>;
   del(key: string): Promise<DelResult>;
+
+  delete: Kv["del"];
 }
