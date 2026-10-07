@@ -44,6 +44,9 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Check dependency lock
+        run: git diff --exit-code -- package.json pnpm-lock.yaml
+
       - name: Types
         run: pnpm types
 
@@ -78,6 +81,9 @@ jobs:
 
       - name: Install
         run: pnpm install --frozen-lockfile
+
+      - name: Check dependency lock
+        run: git diff --exit-code -- package.json pnpm-lock.yaml
 
       - name: Install Consul
         shell: bash

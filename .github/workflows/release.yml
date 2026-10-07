@@ -62,6 +62,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check dependency lock
+        run: git diff --exit-code -- package.json pnpm-lock.yaml
+
+      - name: Update npm CLI
+        run: npm install --global npm@12.2.0
+
       - name: Check types
         run: pnpm types
 
@@ -83,9 +89,6 @@ jobs:
           unzip "consul_${CONSUL_VERSION}_linux_amd64.zip"
           cd "$GITHUB_WORKSPACE"
           CONSUL_BIN="$RUNNER_TEMP/consul/consul" npm run acceptance
-
-      - name: Update npm CLI
-        run: npm install --global npm@11
 
       - name: Publish with npm Trusted Publishing
         run: npm publish --access public --tag "$NPM_DIST_TAG" --registry https://registry.npmjs.org

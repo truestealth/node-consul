@@ -14,7 +14,8 @@ HashiCorp client.
 - No runtime dependencies: requests use Node.js `http` and `https`.
 - TypeScript **5.4 or newer** when using the included declarations.
 
-Version **1.2.1** refreshes the development tools and type checks. It retains
+Version **1.2.2** updates the development toolchain to pnpm 12 and validates the
+npm archive with npm 12 before publication. It retains
 the modern ACL API, typed Config Entry/transaction contracts, opt-in watch pacing
 and safe request diagnostics introduced in earlier releases.
 
@@ -24,7 +25,7 @@ Moving from `consul@2.x`? Start with the
 ## Get started
 
 ```sh
-npm install @truestealth/consul@1.2.1
+npm install @truestealth/consul@1.2.2
 ```
 
 Use an `.mjs` file or set `"type": "module"` in your application's `package.json`:
@@ -420,7 +421,9 @@ failures do not emit a transport event.
 
 ## Development
 
-Use the pnpm version pinned in `package.json`:
+Use pnpm **12.10.1**, pinned in `package.json`. The lockfile records both the
+dependency graph and the package-manager environment; CI rejects install-time
+changes to the manifest or lockfile:
 
 ```sh
 pnpm install --frozen-lockfile
