@@ -14,9 +14,10 @@ Promise и типы TypeScript в самом пакете. Это самосто
 - Проект использует **нативный ESM**. Отдельной CommonJS-сборки нет.
 - Runtime-зависимостей нет: запросы выполняются через стандартные `http` и
   `https` Node.js.
-- В `1.0.0-beta.2` проверяются новый HTTP-слой и управление ресурсами. Config
-  Entries идут следующим этапом. Финальный 1.0.0 появится после acceptance и
-  проверок выпуска.
+- Для встроенных деклараций нужен **TypeScript 5 или новее**.
+- В `1.0.0-beta.3` добавлены Config Entries и типы L4/L7 service intentions.
+  Это все еще промежуточная версия: до стабильного 1.0.0 должны завершиться
+  acceptance и финальные проверки выпуска.
 
 Если у вас стоит `consul@2.x` или `@truestealth/consul@0.1.x`, сначала прочитайте
 [инструкцию миграции](MIGRATION.ru.md): менять только номер версии недостаточно.
@@ -24,7 +25,7 @@ Promise и типы TypeScript в самом пакете. Это самосто
 ## Первый запрос
 
 ```sh
-npm install @truestealth/consul@1.0.0-beta.2
+npm install @truestealth/consul@1.0.0-beta.3
 ```
 
 Пример можно сохранить в `.mjs`. Для обычных `.js` задайте `"type": "module"` в
@@ -161,6 +162,94 @@ Buffer и `null` для пустого значения. `set()` и `del()` во
 имеет другой смысл: подробности в
 [документации KV](https://developer.hashicorp.com/consul/api-docs/kv).
 
+## Config Entries: конфигурация Consul
+
+Раздел `config` читает и записывает конфигурационные записи Consul. Не путайте
+параметры вызова с самим документом: снаружи используются `kind`, `name`, `cas`,
+а внутри `entry` сохраняются серверные имена `Kind`, `Name`, `Protocol` и другие.
+
+```js
+const entry = {
+  Kind: "service-defaults",
+  Name: "example-web",
+  Protocol: "http",
+};
+const created = await consul.config.set({ entry, cas: 0 });
+const stored = await consul.config.get({ kind: entry.Kind, name: entry.Name });
+const entries = await consul.config.list("service-defaults");
+
+if (created && stored?.ModifyIndex !== undefined) {
+  const removed = await consul.config.del({
+    kind: entry.Kind,
+    name: entry.Name,
+    cas: stored.ModifyIndex,
+  });
+}
+```
+
+Если запись не найдена (HTTP 404), `get()` возвращает `undefined`. `list()` дает
+массив; вместо строки можно передать `{ kind, dc, ns, partition, filter, index,
+wait }`. `set()` и удаление с CAS сохраняют boolean от Consul. Успешное безусловное
+удаление возвращает `true` вместо серверного пустого объекта; это не подтверждает,
+что запись существовала. Для удаления есть и имя `delete()`.
+
+Без `cas` операция безусловная. `set({ entry, cas: 0 })` создает запись только
+при ее отсутствии. Для удаления `cas: 0` не означает «удалить в любом случае»:
+существующая запись останется. Ненулевой CAS сверяется с `ModifyIndex`; `false`
+нужно обработать как отказ условия, а не успех. Допускаются целое число в
+безопасном диапазоне JavaScript, десятичная строка и bigint в диапазоне uint64.
+Большой индекс передавайте точно,
+а не превращайте уже округленный number в строку.
+
+`ns` и `partition` передаются во всех операциях, включая запись и удаление.
+Сервер должен поддерживать нужные функции Enterprise и разрешать доступ по ACL.
+Тест на Community Edition не подтверждает работу Enterprise-сценария.
+Ограничения по видам записей описаны в
+[Config API](https://developer.hashicorp.com/consul/api-docs/config).
+
+### Правила доступа между сервисами
+
+Современные intentions хранятся в записи `service-intentions`. Ее `Name` —
+сервис назначения, а `Sources` — источники трафика. Для источника выбирается
+либо L4 `Action`, либо L7 `Permissions`; одновременно задавать оба поля нельзя.
+Перед использованием L7 настройте совместимый протокол сервиса, например
+`service-defaults` с `Protocol: "http"`.
+
+```ts
+import type { ServiceIntentionsEntry } from "@truestealth/consul";
+
+await consul.config.set({
+  entry: { Kind: "service-defaults", Name: "example-web", Protocol: "http" },
+});
+
+const intentions: ServiceIntentionsEntry = {
+  Kind: "service-intentions",
+  Name: "example-web",
+  Sources: [
+    { Name: "example-admin", Action: "allow" },
+    {
+      Name: "example-frontend",
+      Permissions: [
+        { Action: "allow", HTTP: { PathPrefix: "/api/", Methods: ["GET"] } },
+      ],
+    },
+  ],
+};
+
+const applied = await consul.config.set({ entry: intentions, cas: 0 });
+const storedIntentions = await consul.config.get({
+  kind: "service-intentions",
+  name: "example-web",
+});
+```
+
+Это запись целого документа, не добавление одного правила. При изменении
+существующих intentions сначала прочитайте их, сохраните нужные источники и
+запишите результат с актуальным CAS. Старый CRUD intentions по ID не добавлен:
+вместо него используется Config API. Типы проверяют структуру L4/L7, а полную
+конфигурацию проверяет сервер. Детали протокола, mesh и редакции Consul — в
+[справочнике service-intentions](https://developer.hashicorp.com/consul/docs/reference/config-entry/service-intentions).
+
 ## Другие разделы
 
 API не ограничивается KV. Сохраняются следующие разделы и способы вызова:
@@ -247,6 +336,14 @@ Acceptance запускает три агента HashiCorp Consul на `127.0.0
 Тестовый кластер включает Connect и использует BoltDB для Raft, чтобы работать
 и на Windows. Повторять эти настройки в своем окружении не требуется.
 Отдельной сборки нет: пакет содержит исходные модули и декларации.
+
+Открытое замечание dev-аудита на 2026-10-07: цепочка зависимостей `tsd`/`globby`
+содержит `braces@3.0.3`, для которого опубликован high-severity advisory
+[GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+Исправленная версия в advisory не указана. В runtime npm-пакета этой зависимости
+нет, а параметры Consul API не обрабатываются как glob-шаблоны. Не передавайте
+недоверенные шаблоны инструментам разработки. Замечание остается открытым:
+несовместимая подмена зависимости ради чистого отчета не применяется.
 
 ## Происхождение и лицензии
 

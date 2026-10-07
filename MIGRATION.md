@@ -3,9 +3,9 @@
 [Русский](MIGRATION.ru.md) · [Package documentation](README.md)
 
 This guide applies to `consul@2.x` and `@truestealth/consul@0.1.x` applications.
-The `1.0.0-beta.2` preview includes the ESM conversion and native Node.js HTTP
-transport. Config Entries will follow before stable 1.0.0; do not assume every
-feature from the roadmap is already available.
+The `1.0.0-beta.3` preview includes ESM, the native Node.js HTTP transport, and
+Config Entries with service-intentions support. Final acceptance and release
+checks still precede stable 1.0.0.
 
 ## 1. Update Node.js and the dependency
 
@@ -14,7 +14,7 @@ runs CI on Node.js 26.
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.0.0-beta.2
+npm install @truestealth/consul@1.0.0-beta.3
 ```
 
 Skip the uninstall command if you already use the scoped package. Update any
@@ -58,7 +58,7 @@ async function start() {
 
 ## 3. Adjust TypeScript's module resolution
 
-For a Node.js application, use `module: "NodeNext"` and
+Use TypeScript 5 or newer. For a Node.js application, use `module: "NodeNext"` and
 `moduleResolution: "NodeNext"`. Your TypeScript sources must belong to an ESM
 package, or use `.mts`. Replace `import Consul = require("consul")` with the
 default import above. Declarations are shipped alongside the source; no separate
@@ -112,11 +112,34 @@ Lifecycle changes are intentional:
   uncertain write outcomes explicitly; a transport error is not evidence that
   the server did not commit the operation.
 
+## 6. Adopt Config Entries where needed
+
+The new `consul.config` section provides `get({ kind, name })`, `set({ entry })`,
+`list(kind)` or `list({ kind })`, and `del({ kind, name })` with a `delete()` alias.
+The entry body uses the original PascalCase Consul fields. Missing reads return
+`undefined`; writes and conditional deletes preserve boolean CAS results.
+Successful unconditional deletes normalize Consul's empty-object response to
+`true`, without asserting that the entry existed.
+
+`cas: 0` is sent, not discarded: it means create-only on `set()`, and does not
+delete an existing entry on `del()`. Omit `cas` for an unconditional operation.
+Use the current `ModifyIndex` for a conditional update, and exact strings or
+bigints for large CAS values. `ns` and `partition` are forwarded but still depend
+on Consul Enterprise and ACL policy.
+
+For modern intentions, use a `service-intentions` entry identified by destination
+service name. Do not treat an old intention ID as that name. Writes replace the
+whole entry: preserve existing sources when editing and use CAS. L4 sources use
+`Action`; L7 sources use `Permissions` with HTTP match rules and require a
+compatible service protocol. See the [examples](README.md#config-entries) and
+[HashiCorp reference](https://developer.hashicorp.com/consul/docs/reference/config-entry/service-intentions).
+
 ## Preview limits
 
-Config Entries and service-intentions through Config Entries are not included
-in `1.0.0-beta.2`. The inherited API does not cover every endpoint of every Consul
-version. No Redis-backed resolver, DNS discovery, or scoring subsystem is added.
+The inherited API does not cover every endpoint of every Consul version, and
+declarations are not a substitute for the server's configuration validation.
+Enterprise-specific behavior requires testing against your Enterprise deployment.
+No Redis-backed resolver, DNS discovery, or scoring subsystem is added.
 
 Run application tests against your real Consul configuration before adopting the
 preview. Test ACLs, TLS, binary KV values, CAS failures, blocking reads, watch

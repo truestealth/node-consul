@@ -3,9 +3,9 @@
 [English](MIGRATION.md) · [Документация клиента](README.ru.md)
 
 Инструкция для проектов с `consul@2.x` и `@truestealth/consul@0.1.x`. В
-`1.0.0-beta.2` уже включает ESM и HTTP-слой на стандартной библиотеке Node.js.
-Расширение API через Config Entries идет следующим этапом; beta пока не равна
-будущему стабильному 1.0.0.
+`1.0.0-beta.3` уже включает ESM, HTTP-слой на стандартной библиотеке Node.js и
+Config Entries с service-intentions. Acceptance и финальные проверки еще должны
+завершиться до стабильного 1.0.0.
 
 ## Сначала среда и имя пакета
 
@@ -14,7 +14,7 @@
 
 ```sh
 npm uninstall consul
-npm install @truestealth/consul@1.0.0-beta.2
+npm install @truestealth/consul@1.0.0-beta.3
 ```
 
 Если scoped-пакет уже используется, удалять `consul` не требуется. Проверьте
@@ -62,7 +62,8 @@ async function start() {
 
 ## Настройки TypeScript
 
-Для Node.js задайте `module: "NodeNext"` и `moduleResolution: "NodeNext"`.
+Нужен TypeScript 5 или новее. Для Node.js задайте `module: "NodeNext"` и
+`moduleResolution: "NodeNext"`.
 Исходники приложения должны определяться как ESM: через package с
 `"type": "module"` или расширение `.mts`. Вместо
 `import Consul = require("consul")` используйте default import из примера выше.
@@ -115,11 +116,34 @@ TLS передаются в конструктор, `agent: false` отключ�
   ошибки нельзя считать, что операция точно не была применена; проверьте
   состояние прежде, чем повторять ее.
 
+## Если нужна конфигурация mesh
+
+Новый раздел `consul.config` работает через `get({ kind, name })`,
+`set({ entry })`, `list(kind)` или `list({ kind })`, `del({ kind, name })` и
+его alias `delete()`. Сам документ сохраняет PascalCase-поля Consul. При
+отсутствии записи получается `undefined`; запись и удаление с CAS сохраняют
+boolean от сервера. При успешном безусловном удалении пустой объект Consul
+превращается в `true`: это не доказательство, что запись существовала.
+
+Нулевой CAS теперь передается явно: `set()` с `cas: 0` создает только новую
+запись, `del()` с ним не удаляет существующую. Для безусловной операции не
+передавайте `cas`, для изменения по условию используйте актуальный `ModifyIndex`.
+Большие CAS задавайте точной строкой или bigint. `ns` и `partition` доставляются
+серверу, но не обходят ограничения Enterprise и ACL.
+
+Для intentions используйте `service-intentions` с именем сервиса назначения,
+не прежний ID отдельного правила. Запись заменяет весь документ: сохраняйте
+нужные `Sources` и защищайте изменения CAS. Для L4 задается `Action`, для L7 —
+`Permissions` с HTTP-условиями; L7 также требует подходящего протокола сервиса.
+Примеры находятся в [README](README.ru.md), серверные условия — в
+[справочнике HashiCorp](https://developer.hashicorp.com/consul/docs/reference/config-entry/service-intentions).
+
 ## Границы этой beta
 
-Config Entries и управление service-intentions через них в `1.0.0-beta.2` еще не
-включены. Клиент не обещает охват всех endpoint каждой версии Consul. Redis,
-DNS discovery и система scoring не добавляются.
+Клиент не обещает охват всех endpoint каждой версии Consul; декларации не
+заменяют проверку конфигурации самим сервером. Enterprise-сценарии проверяйте
+на своей Enterprise-инсталляции. Redis, DNS discovery и система scoring не
+добавляются.
 
 Перед переходом прогоните свои сценарии на настоящем Consul: ACL, HTTPS,
 бинарные значения, отказ CAS, blocking queries и завершение watch. Для

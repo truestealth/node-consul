@@ -9,12 +9,12 @@ import createDebug from "debug";
 
 import Consul from "../../lib/index.js";
 
-async function retry(operation) {
-  for (let attempt = 0; attempt < 100; attempt++) {
+async function retry(operation, attempts = 100) {
+  for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       return await operation();
     } catch (error) {
-      if (attempt === 99) throw error;
+      if (attempt === attempts - 1) throw error;
       await delay(100);
     }
   }
@@ -126,7 +126,7 @@ class Cluster {
         } else {
           await client.agent.self();
         }
-      });
+      }, 300);
     } finally {
       client.destroy();
     }

@@ -8,6 +8,7 @@ import { EventEmitter } from "node:events";
 import { Acl } from "./acl.js";
 import { Agent } from "./agent.js";
 import { Catalog } from "./catalog.js";
+import { Config } from "./config.js";
 import { Event } from "./event.js";
 import { Health } from "./health.js";
 import { Kv } from "./kv.js";
@@ -96,6 +97,7 @@ declare class Consul extends EventEmitter {
   acl: Acl;
   agent: Agent;
   catalog: Catalog;
+  config: Config;
   event: Event;
   health: Health;
   kv: Kv;
@@ -107,6 +109,7 @@ declare class Consul extends EventEmitter {
   static Acl: typeof Acl;
   static Agent: typeof Agent;
   static Catalog: typeof Catalog;
+  static Config: typeof Config;
   static Event: typeof Event;
   static Health: typeof Health;
   static Kv: typeof Kv;

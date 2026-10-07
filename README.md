@@ -12,9 +12,10 @@ HashiCorp client.
   [Node.js release schedule](https://nodejs.org/en/about/previous-releases).
 - Native **ES modules only**. There is no separate CommonJS build.
 - No runtime dependencies: requests use Node.js `http` and `https`.
-- `1.0.0-beta.2` previews the native HTTP transport and lifecycle changes. Config
-  Entries are the next stage; acceptance and release checks must finish before
-  stable 1.0.0.
+- TypeScript **5 or newer** when using the included declarations.
+- `1.0.0-beta.3` adds Config Entries and typed L4/L7 service intentions to the
+  native HTTP client. This remains a preview pending acceptance and final release
+  checks, not stable 1.0.0.
 
 Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
 [migration guide](MIGRATION.md).
@@ -22,7 +23,7 @@ Moving from `consul@2.x` or this package's `0.1.x` releases? Start with the
 ## Get started
 
 ```sh
-npm install @truestealth/consul@1.0.0-beta.2
+npm install @truestealth/consul@1.0.0-beta.3
 ```
 
 Use an `.mjs` file or set `"type": "module"` in your application's `package.json`:
@@ -152,6 +153,91 @@ boolean result returned by Consul; check it when using CAS or session locks.
 [KV API](https://developer.hashicorp.com/consul/api-docs/kv) for locking and CAS
 rules, including the different meaning of `cas: 0` when deleting.
 
+## Config Entries
+
+Use `config` for Consul configuration entries. Request options use lower-case
+names, while `entry` is the original Consul JSON document: keep fields such as
+`Kind`, `Name`, and `Protocol` in their documented case.
+
+```js
+const entry = {
+  Kind: "service-defaults",
+  Name: "example-web",
+  Protocol: "http",
+};
+const created = await consul.config.set({ entry, cas: 0 });
+const stored = await consul.config.get({ kind: entry.Kind, name: entry.Name });
+const entries = await consul.config.list("service-defaults");
+
+if (created && stored?.ModifyIndex !== undefined) {
+  const removed = await consul.config.del({
+    kind: entry.Kind,
+    name: entry.Name,
+    cas: stored.ModifyIndex,
+  });
+}
+```
+
+`get()` returns one entry or `undefined` for HTTP 404. `list()` returns an array
+and also accepts `{ kind, dc, ns, partition, filter, index, wait }`. `set()` and
+CAS-protected `del()` preserve Consul's boolean result. A successful unconditional
+`del()` normalizes Consul's empty-object response to `true`; this does not prove
+the entry existed. `delete()` aliases `del()`.
+
+Omit `cas` for an unconditional write or deletion. With `cas: 0`, `set()` is
+create-only and `del()` does not delete an existing entry. A nonzero CAS must
+match the entry's `ModifyIndex`; `false` means the condition failed. CAS accepts
+a safe integer, decimal string, or bigint in the uint64 range. For larger
+indices, supply an exact string or bigint rather than an already-rounded number.
+
+The client forwards `ns` and `partition`, including on writes and deletes.
+These options require the relevant Consul Enterprise features and ACLs; local
+Community tests do not establish Enterprise compatibility. See the
+[Config API](https://developer.hashicorp.com/consul/api-docs/config) for supported
+kinds and server-side rules.
+
+### Service intentions
+
+Manage intentions through `Kind: "service-intentions"`, not legacy intentions
+CRUD by ID. `Name` identifies the destination service. Each source uses either
+an L4 `Action` or L7 `Permissions`, never both. For L7 rules, first configure a
+compatible service protocol, for example a `service-defaults` entry with
+`Protocol: "http"`.
+
+```ts
+import type { ServiceIntentionsEntry } from "@truestealth/consul";
+
+await consul.config.set({
+  entry: { Kind: "service-defaults", Name: "example-web", Protocol: "http" },
+});
+
+const intentions: ServiceIntentionsEntry = {
+  Kind: "service-intentions",
+  Name: "example-web",
+  Sources: [
+    { Name: "example-admin", Action: "allow" },
+    {
+      Name: "example-frontend",
+      Permissions: [
+        { Action: "allow", HTTP: { PathPrefix: "/api/", Methods: ["GET"] } },
+      ],
+    },
+  ],
+};
+
+const applied = await consul.config.set({ entry: intentions, cas: 0 });
+const storedIntentions = await consul.config.get({
+  kind: "service-intentions",
+  name: "example-web",
+});
+```
+
+A write replaces the whole configuration entry, not just one source. To change
+an existing entry, read it, preserve the sources you need, and write with its
+current CAS index. The declarations model L4/L7 fields, but Consul validates the
+complete configuration. Protocol, mesh, and edition restrictions are documented
+in the [service-intentions reference](https://developer.hashicorp.com/consul/docs/reference/config-entry/service-intentions).
+
 ## The rest of the API
 
 The existing API sections remain available:
@@ -237,6 +323,14 @@ loopback addresses, then run `npm run acceptance`. The test cluster enables
 Connect and uses the BoltDB Raft backend for Windows compatibility; these are
 test settings, not requirements for your deployment. The client has no build
 step; the npm archive ships source modules and declarations.
+
+Known development-only audit finding (2026-10-07): the `tsd`/`globby` dependency
+chain includes `braces@3.0.3`, affected by the high-severity
+[GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
+The advisory lists no patched version. This dependency is not part of the
+runtime npm package, and Consul API inputs are not evaluated as glob patterns.
+Do not pass untrusted patterns to the development tools; the finding remains
+open rather than being hidden by an incompatible override.
 
 ## Origin and license
 

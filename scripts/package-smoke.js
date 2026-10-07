@@ -98,6 +98,7 @@ try {
       response.setHeader('content-type', 'application/json');
       if (request.method === 'PUT') return response.end('false');
       if (request.url.includes('missing')) { response.statusCode = 404; return response.end(); }
+      if (request.url.includes('/config/')) return response.end(JSON.stringify({ Kind: 'service-intentions', Name: 'web', Sources: [{ Name: 'api', Action: 'allow' }] }));
       response.end(JSON.stringify([{ Key: 'key', Value: 'AP8=', ModifyIndex: 1 }]));
     });
     server.listen(0, '127.0.0.1');
@@ -107,6 +108,9 @@ try {
       assert.deepEqual((await consul.kv.get({ key: 'key', buffer: true })).Value, Buffer.from([0, 255]));
       assert.equal(await consul.kv.get('missing'), undefined);
       assert.equal(await consul.kv.set('key', 'value', { cas: 0 }), false);
+      assert.equal((await consul.config.get({ kind: 'service-intentions', name: 'web' })).Sources[0].Action, 'allow');
+      assert.equal(await consul.config.get({ kind: 'service-defaults', name: 'missing' }), undefined);
+      assert.equal(await consul.config.set({ entry: { Kind: 'service-defaults', Name: 'web', Protocol: 'http' }, cas: 0 }), false);
       await assert.rejects(consul.kv.get({ key: 'stall', timeout: 20 }), (error) => error.isTimeout);
     } finally {
       consul.destroy();
@@ -131,10 +135,11 @@ try {
   await writeFile(
     probe,
     `
-    import Consul, { type CommonOptions } from '@truestealth/consul';
+    import Consul, { type CommonOptions, type ServiceIntentionsEntry } from '@truestealth/consul';
     const consul = new Consul({ defaults: { timeout: '1s' } });
     const options: CommonOptions<false> = { signal: new AbortController().signal };
     const result: Promise<Buffer | undefined> = consul.kv.get({ key: 'key', raw: true, ...options });
+    const intentions: Promise<ServiceIntentionsEntry | undefined> = consul.config.get({ kind: 'service-intentions', name: 'web' });
     consul.watch({ method: consul.kv.get, options: { key: 'key' } }).end();
     consul.destroy();
   `,
