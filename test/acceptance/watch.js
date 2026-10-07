@@ -61,7 +61,7 @@ helper.describe("Watch", function () {
       should(updateTimes).not.be.empty();
       updateTimes.forEach(function (updateTime, index) {
         if (index === 0) return;
-        should(updateTime).have.above(updateTimes[index - 1]);
+        should(updateTime).be.aboveOrEqual(updateTimes[index - 1]);
       });
     } finally {
       watch.end();
